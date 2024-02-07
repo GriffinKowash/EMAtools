@@ -1,0 +1,10 @@
+setup.py
+src/EMAtools.egg-info/PKG-INFO
+src/EMAtools.egg-info/SOURCES.txt
+src/EMAtools.egg-info/dependency_links.txt
+src/EMAtools.egg-info/requires.txt
+src/EMAtools.egg-info/top_level.txt
+src/Veelo/__init__.py
+src/Veelo/modify_current.py
+src/Veelo/preprocess.py
+src/Veelo/util.py

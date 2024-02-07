@@ -4,6 +4,7 @@ import os
 import glob
 
 import numpy as np
+import scipy
 
 
 def rfft(t, x, window=None):
@@ -57,7 +58,8 @@ def rfft(t, x, window=None):
     return f, x_fft
 
 
-def trim_to_time(t, x, cutoff):
+def trim_to_time(t, x, t0, t1=None):
+    # TODO: accept either single arg (endtime cutoff) or two args (slice)
     """Trims time domain data to a specified cutoff time.
     
     Can be used on a single 
@@ -68,8 +70,10 @@ def trim_to_time(t, x, cutoff):
         Time step data (1d)
     x : np.ndarray
         Time series data (nd)
-    cutoff : float
-        Cutoff time in seconds
+    t0 : float (optional)
+        End time if t1 is not specified; otherwise start time
+    t1 : float (optional)
+        End time.
 
     Returns
     -------
@@ -77,6 +81,15 @@ def trim_to_time(t, x, cutoff):
         A tuple of trimmed data the form (t_trim, x_trim)
     """
     
+    # Determine start and end time from t0/t1 arguments
+    if t1 is None:
+        start = 0
+        end = t0
+        
+    else:
+        start = t0
+        end = t1
+        
     # Handle errors and warnings
     if t.ndim > 1:
         raise ValueError(f'Array t must have exactly one dimension; {t.ndim} provided.')
@@ -84,13 +97,17 @@ def trim_to_time(t, x, cutoff):
     elif x.shape[0] != t.size:
         raise ValueError(f'First dimension of x ({x.shape[0]}) must match size of t ({t.size}).')
         
-    elif cutoff < 0:
-        raise ValueError(f'Cutoff time ({cutoff}) must be greater than or equal to zero.')
+    elif end < 0:
+        raise ValueError(f'Start and end times ({start}, {end}) must be greater than or equal to zero.')
         
-    # Identify cutoff index and return trimmed data
-    index = np.abs(t - cutoff).argmin()
-    t_trim = t[:index]
-    x_trim = x[:index, ...]
+    elif start > end:
+        raise ValueError(f'Start time ({start}) must be less than end time ({end}).')
+        
+    # Identify cutoff index and return trimmed data   
+    i_start = np.abs(t - start).argmin()
+    i_end = np.abs(t - end).argmin()
+    t_trim = t[i_start:i_end]
+    x_trim = x[i_start:i_end, ...]
     
     return t_trim, x_trim
 
@@ -153,8 +170,7 @@ def pad_data_to_time(t, x, endtime, val=0):
     return t_padded, x_padded
 
 
-def resample(t, x, steps):
-    # TODO: use scipy.interpolate.interp1d to support non-linear interpolation
+def resample(t, x, steps, mode='linear'):
     """Resamples time series data using linear interpolation to a specified time step.
     
     Typical use cases relate to frequency domain operations between data sets with different
@@ -166,8 +182,10 @@ def resample(t, x, steps):
         original time steps
     x : np.ndarray
         data to resample
-    step : float | np.ndarray
-        Step size or array of sample points
+    steps : float | np.ndarray
+        Desired time step, or custom array of sample times
+    mode : str (optional)
+        Interpolation mode (linear or spline)
         
     Returns
     -------
@@ -175,9 +193,8 @@ def resample(t, x, steps):
         Tuple (t_resamp, x_resamp) of the resampled data
     """
     
-    if isinstance(steps, (list, tuple, np.ndarray)):
-        # Note: isn't there a method for checking ArrayLike?
-        # Array of sample points
+    if np.iterable(steps):
+        # Custom array of sample times
         t_resamp = steps
     
     else:
@@ -185,6 +202,11 @@ def resample(t, x, steps):
         dt = steps
         t_resamp = np.arange(t[0], t[-1] + dt, dt)
     
-    x_resamp = np.interp(t_resamp, t, x)
+    if mode == 'linear':
+        x_resamp = np.interp(t_resamp, t, x)
+    
+    elif mode == 'spline':
+        bspline = scipy.interpolate.make_interp_spline(t, x, k=3)
+        x_resamp = bspline(t_resamp)
     
     return t_resamp, x_resamp

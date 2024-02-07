@@ -18,7 +18,7 @@ class Emin:
             self.path = path
             
         file = open(self.path, 'r')
-        self.lines = file.readlines()
+        self.lines = file.read().splitlines()
         file.close()
         
         
@@ -62,6 +62,7 @@ class Emin:
         # Accept either an iterable in the first position or multiple line numbers
         if np.iterable(args[0]):
             l = np.array(args[0])
+            
         else:
             #TODO: verify if length check is necessary. Will len=1 list unpack?
             if len(args) > 1:
@@ -175,28 +176,6 @@ class Emin:
         else:
             return indices
     
-        temp = """
-        # Make text lowercase if not case sensitive
-        if not case:
-            text = text.lower()
-        
-        # Search for nth occurrence of text
-        n_found = 0
-        
-        for i, line in enumerate(self.lines):
-            if not case:
-                line = line.lower()
-                
-            if (exact and text == line) or (not exact and text in line):
-                n_found += 1
-                
-                if n_found == n:
-                    return i
-            
-        print(f'Text string "{text}" not found in emin file.')
-        return None
-        """
-    
     
     def insert(self, i, text):
         """Inserts text at position i in self.lines.
@@ -242,6 +221,7 @@ class Emin:
         
         
     def replace(self, i, text):
+        # TODO : allow replace to accept multiple indices
         """Inserts text at position i in self.lines
 
         Parameters
@@ -268,11 +248,11 @@ class Emin:
             self.lines.extend([''] * n_pad)
         
         # replace lines with provided text
-        self.lines[i:i+3] = text
+        self.lines[i:i_stop] = text
                 
                 
     def get(self, i0, i1=None):
-        """Returns lines defined by slice or array of indices.
+        """Returns lines defined by slice (endpoint inclusive) or array of indices.
 
         Parameters
         ----------
@@ -293,11 +273,14 @@ class Emin:
             warnings.warn('Argument i0 is iterable; i1 will be ignored.')
         
         # Print lines
-        if not np.iterable(i0):
-            return self.lines[i0:i1]
+        if np.iterable(i0):
+            return [self.lines[i] for i in i0]
+        
+        elif i1 is not None:
+            return self.lines[i0:i1+1]
         
         else:
-            return [self.lines[i] for i in i0]
+            return self.lines[i0]
         
 
     def getlines(self, l0, l1=None):
@@ -320,8 +303,12 @@ class Emin:
             warnings.warn('Argument l0 is iterable; l1 will be ignored.')
         
         # Get lines
-        i0 = Emin.ltoi(l0)
-        i1 = l1
+        if np.iterable(l0) or l1 is None:
+            i0 = Emin.ltoi(l0)
+            i1 = None
+        
+        elif l1 is not None:
+            i0, i1 = Emin.ltoi(l0, l1)
         
         return self.get(i0, i1)
 
@@ -363,10 +350,9 @@ class Emin:
             else:
                 n = l0 + i
             
-            print(n, '\t|', line[:-1])  #trim trailing newline character
+            print(n, '\t|', line)
             
                 
-    
     def head(self, n):
         """Wrapper for Emin.printlines; prints first n lines of emin contents.
 
@@ -381,3 +367,68 @@ class Emin:
         """
         
         self.printlines(1, n)
+        
+        
+    def modify_isotropic_material(self, name, sig=None, eps=None, mu=None, sigm=None, eps_rel=None, mu_rel=None):
+        """Modifies properties of an isotropic material to the provided values.
+
+        Parameters
+        ----------
+        name : str
+            Name of material as listed in emin file
+        sig : float (optional)
+            Electric conductivity
+        eps : float (optional)
+            Permittivity
+        mu : float (optional)
+            Permeability
+        sigm : float (optiona)
+            Magnetic conductivity
+        eps_rel : float (optional)
+            Relative permittivity (overrides eps)
+        mu_rel : float (optional)
+            Relative permeability (overrides mu)
+
+        Returns
+        -------
+        None
+        """
+        
+        
+        
+        # Handle warnings
+        if eps is not None and eps_rel is not None:
+            warnings.warn('Permittivity was specified as both absolute and relative; absolute value will be discarded.')
+        
+        if mu is not None and eps_rel is not None:
+            warnings.warn('Permeability was specified as both absolute and relative; absolute value will be discarded.')
+            
+        # Convert relative values to absolute
+        if eps_rel is not None:
+            eps = eps_rel * 8.85418782e-12
+        
+        if mu_rel is not None:
+            mu = mu_rel * 1.25663706e-6
+            
+        # Modify emin lines
+        text = None
+        
+        for index in self.find_occurrences(f'* MATERIAL : {name}'):
+            i = index + 4 #assumes properties are four lines below name
+            
+            if text is None:
+                sig0, eps0, mu0, sigm0 = np.array(self.get(i).split()).astype(np.float64)
+                
+                if sig is not None:
+                    sig0 = sig
+                if eps is not None:
+                    eps0 = eps
+                if mu is not None:
+                    mu0 = mu
+                if sigm is not None:
+                    sigm0 = sigm
+                    
+                strings = list(map(lambda x: '%.10E' % x, [sig0, eps0, mu0, sigm0]))
+                text = '    '.join(strings)       
+            
+            self.replace(i, text)
