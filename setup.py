@@ -8,8 +8,8 @@ here = pathlib.Path(__file__).parent.resolve()
 
 setup(
     name="EMAtools",  # Required
-    version="1.0.0",  # Required
-    description="An assortment of tools to make life easier at EMA.",  # Optional
+    version="0.0.1",  # Required
+    description="An assortment of computational tools to make life easier at EMA.",  # Optional
     #long_description=long_description,  # Optional
     #long_description_content_type="text/markdown",  # Optional (see note above)
     url="https://github.com/GriffinKowash/EMAtools",  # Optional
@@ -18,5 +18,5 @@ setup(
     package_dir={"": "src"},  # Optional
     packages=find_packages(where="src"),  # Required
     python_requires=">=3.7, <4",
-    install_requires=["numpy", "matplotlib", "scipy"]  # Optional
+    install_requires=["numpy", "scipy"]  # Optional
 )
