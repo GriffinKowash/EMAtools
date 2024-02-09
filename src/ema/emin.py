@@ -39,7 +39,8 @@ class Emin:
             path = self.path
             
         file = open(path, 'w')
-        file.writelines(self.lines)
+        # TODO: clean up management of newline characters
+        file.writelines([line + '\n' for line in self.lines])
         file.close()
         
         
@@ -97,7 +98,6 @@ class Emin:
             i = np.array(args[0])
             
         else:
-            #TODO: verify if length check is necessary. Will len=1 list unpack?
             if len(args) > 1:
                 i = np.array(args)
             else:
@@ -182,24 +182,31 @@ class Emin:
 
         Parameters
         ----------
-        i : int
-            Index at which to insert.
+        i : int | list
+            Index/indices at which to insert.
         text : str | list
-            String or list of strings to insert.
+            Line or list of lines to insert.
             
         Returns
         -------
         None
         """
         
+        # Put single index into list
+        if not np.iterable(i):
+             i = [i]
+        
         # make single string into list for convenience
         if isinstance(text, str):
             text = [text]
         
-        # add lines in reverse order at position i
+        # Insert lines
         text.reverse()
-        for line in text:
-            self.lines.insert(i, line)
+        i = sorted(i, reverse=True)
+        
+        for index in i:
+            for line in text:
+                self.lines.insert(index, line)
         
     
     def insert_after(self, i, text):
@@ -207,8 +214,8 @@ class Emin:
 
         Parameters
         ----------
-        i : int
-            Index of line prior to inserted line.
+        i : int | list
+            Index/indices after which to insert text.
         text : str | list
             String or list of strings to insert.
             
@@ -216,6 +223,10 @@ class Emin:
         -------
         None
         """
+        
+        # Increment indices by one and call Emin.insert
+        if np.iterable(i):
+            i = np.array(i)
         
         self.insert(i + 1, text)
         
