@@ -23,8 +23,8 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
     
     Parameters
     ----------
-    path_and_name : str
-        Path to probe file (with .dat suffix)
+    path_and_name : str | list
+        Path to probe file with .dat suffix, or list of paths
     last_index : str (optional)
         Specifies structure of data array by last index
     precision : str (optional)
@@ -50,8 +50,7 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
 
     time, data, timestep = [], [], []
 
-    total_lines = len(lines)
-    
+    #total_lines = len(lines)
     
     for i, line in enumerate(lines):
         #if i % (int(total_lines / 100)) == 0:
@@ -61,9 +60,9 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
         
         try:
             dtype = np.float32 if precision == 'single' else np.float64
-            values = list(map(lambda x: dtype(x), line_split))
+            values = [dtype(val) for val in line_split]
         except:
-            print(f'Entry in line {i} cannot be cast to {dtype}: "{line_split}"')
+            raise ValueError(f'Entry in line {i} cannot be cast to {dtype}: "{line_split}"')
 
         if len(timestep) == 0:
             time.append(values[0])

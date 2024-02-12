@@ -439,7 +439,7 @@ class Emin:
                 if sigm is not None:
                     sigm0 = sigm
                     
-                strings = list(map(lambda x: '%.10E' % x, [sig0, eps0, mu0, sigm0]))
+                strings = ['%.10E' % val for val in [sig0, eps0, mu0, sigm0]]
                 text = '    '.join(strings)       
             
             self.replace(i, text)
