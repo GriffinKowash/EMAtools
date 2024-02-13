@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 
 
-def rfft(t, x, window=None):
+def rfft(t, x, axis=0, window=None):
     """Calculates FFT from real time series data.
     
     The result is normalized such that the FFT provides the true amplitude of each frequency.
@@ -21,6 +21,8 @@ def rfft(t, x, window=None):
         Time step data (1d)
     x : np.ndarray
         Time series data (nd)
+    axis : int (optional)
+        Axis along which to take FFT
     window : string (optional)
         Name of window function
 
@@ -36,8 +38,8 @@ def rfft(t, x, window=None):
     if t.ndim > 1:
         raise ValueError(f'Array t must have exactly one dimension; {t.ndim} provided.')
         
-    elif t.size != x.shape[-1]:
-        raise ValueError(f'Last dimension of x ({x.shape[-1]}) must match size of t ({t.size}).')
+    elif t.size != x.shape[axis]:
+        raise ValueError(f'Dimension of x axis {axis} ({x.shape[-1]}) must match size of t ({t.size}).')
         
     elif np.any(np.iscomplexobj(x)):
         warnings.warn(f'Array x has complex dtype {x.dtype}; imaginary components will be discarded, which may affect results.')
@@ -50,10 +52,12 @@ def rfft(t, x, window=None):
         window_func = windows[window]
         # TODO: allow user to specify arbitrary axis axis for time steps
         window_array = window_func(x.shape[0])
-        x = np.swapaxes(np.swapaxes(x, -1, 0) * window_array, -1, 0)
+        x = np.swapaxes(np.swapaxes(x, -1, axis) * window_array, -1, axis)
     
     f = np.fft.rfftfreq(t.size) / (t[1] - t[0])
-    x_fft = np.fft.rfft(x, norm='forward', axis=-1) * 2
+    x_fft = np.fft.rfft(x, norm='forward', axis=axis) * 2
+    
+    print('development version')
     
     return f, x_fft
 
