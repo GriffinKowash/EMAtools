@@ -56,9 +56,7 @@ def rfft(t, x, axis=0, window=None):
     
     f = np.fft.rfftfreq(t.size) / (t[1] - t[0])
     x_fft = np.fft.rfft(x, norm='forward', axis=axis) * 2
-    
-    print('development version')
-    
+        
     return f, x_fft
 
 
