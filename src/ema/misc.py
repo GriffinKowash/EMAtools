@@ -79,7 +79,7 @@ def restrict_surface_current(path, direction, overwrite=True):
     column_dict = {'x': 3, 'y': 4, 'z': 5}
     
     # Handle exceptions and warnings
-    if direction not in column_dict.keys():
+    if direction not in column_dict:
         raise ValueError(f'Direction must be "x", "y", or "z" (provided "{direction}")')
         
     # open emin file

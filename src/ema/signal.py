@@ -44,11 +44,11 @@ def rfft(t, x, axis=0, window=None):
     elif np.any(np.iscomplexobj(x)):
         warnings.warn(f'Array x has complex dtype {x.dtype}; imaginary components will be discarded, which may affect results.')
         
-    if window is not None and window not in windows.keys():
+    if window is not None and window not in windows:
         warnings.warn(f'Provided invalid window type "{window}"; window will default to rectangular.')
     
     # Compute FFT and frequency array
-    if window in windows.keys():
+    if window in windows:
         window_func = windows[window]
         # TODO: allow user to specify arbitrary axis axis for time steps
         window_array = window_func(x.shape[0])
