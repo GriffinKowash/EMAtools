@@ -84,9 +84,8 @@ def restrict_surface_current(path, direction, overwrite=True):
         
     # open emin file
     emin_path_and_name = find_emin(path)
-    emin = open(emin_path_and_name, 'r')
-    lines = emin.readlines()
-    emin.close()
+    with open(emin_path_and_name, 'r') as emin:
+        lines = emin.readlines()
 
     # identify start and end of current source definition
     i0, i1 = 0, 0
@@ -114,9 +113,8 @@ def restrict_surface_current(path, direction, overwrite=True):
     else:
         save_path_and_name = emin_path_and_name[:-5] + '_' + str(time.time()) + '.emin'
     
-    emin = open(save_path_and_name, 'w')
-    emin.writelines(new_lines)
-    emin.close()
+    with open(save_path_and_name, 'w') as emin:
+        emin.writelines(new_lines)
 
     print(f'Saved modified emin file to {save_path_and_name}')
         

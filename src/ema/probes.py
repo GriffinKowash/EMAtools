@@ -44,9 +44,8 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
         raise Exception(f'File path specified by user does not exist. ({path_and_name})')
     
     # Process probe data
-    file = open(path_and_name, 'r')
-    lines = file.readlines()
-    file.close()
+    with open(path_and_name, 'r') as file:
+        lines = file.readlines()
 
     time, data, timestep = [], [], []
 

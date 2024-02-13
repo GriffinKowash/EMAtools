@@ -17,9 +17,8 @@ class Emin:
         else:
             self.path = path
             
-        file = open(self.path, 'r')
-        self.lines = file.read().splitlines()
-        file.close()
+        with open(self.path, 'r') as file:
+            self.lines = file.read().splitlines()
         
         
     def save(self, path=None):
@@ -38,11 +37,10 @@ class Emin:
         if path is None:
             path = self.path
             
-        file = open(path, 'w')
-        # TODO: clean up management of newline characters
-        file.writelines([line + '\n' for line in self.lines])
-        file.close()
-        
+        with open(path, 'w') as file:
+            # TODO: clean up management of newline characters
+            file.writelines([line + '\n' for line in self.lines])
+            
         
     @staticmethod
     def ltoi(*args):
