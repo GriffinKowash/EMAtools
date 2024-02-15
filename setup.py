@@ -8,7 +8,7 @@ here = pathlib.Path(__file__).parent.resolve()
 
 setup(
     name="EMAtools",  # Required
-    version="0.0.4",  # Required
+    version="0.0.3",  # Required
     description="An assortment of computational tools to make life easier at EMA.",  # Optional
     #long_description=long_description,  # Optional
     #long_description_content_type="text/markdown",  # Optional (see note above)
