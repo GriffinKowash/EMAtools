@@ -47,13 +47,14 @@ def rfft(t, x, axis=0, window=None):
     if window is not None and window not in windows:
         warnings.warn(f'Provided invalid window type "{window}"; window will default to rectangular.')
     
-    # Compute FFT and frequency array
+    # Apply window
     if window in windows:
         window_func = windows[window]
         # TODO: allow user to specify arbitrary axis axis for time steps
         window_array = window_func(x.shape[0])
         x = np.swapaxes(np.swapaxes(x, -1, axis) * window_array, -1, axis)
     
+    # Compute FFT and frequency array
     f = np.fft.rfftfreq(t.size) / (t[1] - t[0])
     x_fft = np.fft.rfft(x, norm='forward', axis=axis) * 2
         
@@ -72,7 +73,7 @@ def trim_to_time(t, x, t0, t1=None):
         Time step data (1d)
     x : np.ndarray
         Time series data (nd)
-    t0 : float (optional)
+    t0 : float
         End time if t1 is not specified; otherwise start time
     t1 : float (optional)
         End time.
@@ -146,7 +147,7 @@ def pad_array_to_length(x, size, val=0):
 
 
 def pad_data_to_time(t, x, endtime, val=0):
-    """Wrapper for pad_array_to_length that pads both time steps and data to the desired end time.
+    """Pads both time steps and measurements to the desired end time; wrapper for pad_array_to_length.
     
     Parameters
     ----------
@@ -212,3 +213,8 @@ def resample(t, x, steps, mode='linear'):
         x_resamp = bspline(t_resamp)
     
     return t_resamp, x_resamp
+
+
+### Aliases ###
+pad_to_time = pad_data_to_time
+pad = pad_array_to_length
