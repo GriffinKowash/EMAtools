@@ -104,13 +104,15 @@ class Emin:
         return i + 1
         
         
-    def find_occurrences(self, text, exact=False, case=True, n_max=None):
+    def find_occurrences(self, text, start=0, exact=False, case=True, n_max=None):
         """Finds indices of all occurrences of a text string in self.lines.
 
         Parameters
         ----------
         text : str
             Text string for which to search emin file.
+        start : int (optional)
+            Index at which to begin search; defaults to start of file.
         exact : bool (optional)
             Whether line must exactly match or simply contain text string.
         case : bool (optional)
@@ -132,18 +134,20 @@ class Emin:
         n_found = 0
         indices = []
         
-        for i, line in enumerate(self.lines):
+        for i, line in enumerate(self.lines[start:]):
             if not case:
                 line = line.lower()
                 
             if (exact and text == line) or (not exact and text in line):
-                indices.append(i)
+                indices.append(start + i)
                 n_found += 1
                 
                 if n_found == n_max:
                     return np.array(indices)
             
-        #print(f'Text string "{text}" not found in emin file.')
+        if n_found == 0:
+            print(f'Text string "{text}" not found in emin file.')
+
         return np.array(indices)
         
         
@@ -173,6 +177,25 @@ class Emin:
             return indices[-1]
         else:
             return indices
+        
+
+    def find_next(self, i, text, **kwargs):
+        """Finds next occurrence of text after index i; wrapper for Emin.find.
+        
+        Parameters
+        ----------
+        i : int
+            Index at which to begin search.
+        text : str
+            Text string for which to search emin file.
+            
+        Returns
+        -------
+        int | None
+            Index of text string in self.lines; None if not present.
+        """
+
+        return self.find(text, start=i+1, **kwargs)
     
     
     def insert(self, i, text):
@@ -227,16 +250,37 @@ class Emin:
             i = np.array(i)
         
         self.insert(i + 1, text)
-        
-        
-    def replace(self, i, text):
-        # TODO : allow replace to accept multiple indices
-        """Inserts text at position i in self.lines
+
+    
+    def remove(self, i0, i1=None):
+        """Removes line or range of lines from emin text
 
         Parameters
         ----------
-        i : int
-            Index at which to replace.
+        i : int | tuple
+            Index or range of indices to remove.
+
+        Returns
+        -------
+        None
+        """
+
+        # delete single line
+        if i1 is None:
+            del(self.lines[i0])
+
+        # delete range of lines
+        else:
+            self.lines = [line for i, line in enumerate(self.lines) if i not in range(i0, i1+1)]
+        
+        
+    def replace(self, i, text):
+        """Inserts text at position or range i in self.lines
+
+        Parameters
+        ----------
+        i : int | tuple
+            Index or range of indices to replace.
         text : str | list
             String or list of strings with which to replace.
             
@@ -249,15 +293,25 @@ class Emin:
         if isinstance(text, str):
             text = [text]
         
-        # find stop index and handle case where self.lines is too short
-        i_stop = i + len(text)
+        # find start/stop indices
+        if isinstance(i, int):
+            i0 = i
+            i1 = i0 + len(text) - 1
+
+        elif np.iterable(i):
+            # TODO: warning for len(i) > 2
+            i0, i1 = i
         
-        if i_stop > len(self.lines):
-            n_pad = i_stop - len(self.lines)
-            self.lines.extend([''] * n_pad)
+        # handle case where self.lines is too short
+        if i1 > len(self.lines):
+            i1 = len(self.lines)
+            #n_pad = i1 - len(self.lines)
+            #self.lines.extend([''] * n_pad)
         
         # replace lines with provided text
-        self.lines[i:i_stop] = text
+        self.remove(i0, i1)
+        self.insert(i0, text)
+        #self.lines[i0:i1] = text
                 
                 
     def get(self, i0, i1=None):
@@ -403,8 +457,6 @@ class Emin:
         None
         """
         
-        
-        
         # Handle warnings
         if eps is not None and eps_rel is not None:
             warnings.warn('Permittivity was specified as both absolute and relative; absolute value will be discarded.')
@@ -441,3 +493,48 @@ class Emin:
                 text = '    '.join(strings)       
             
             self.replace(i, text)
+            
+
+
+    def restrict_surface_current(self, direction):
+        """Restricts surface current definition in emin file to a single direction.
+        
+        As of 2024R1, the direction of a surface current cannot be specified in the GUI.
+        For example, a current source applied to a z-normal surface will have
+        currents in both the x and y directions. This function can modify such a
+        current source to be directed only in the x or y direction.
+        
+        Parameters
+        ----------
+        path : str
+            Path to emin file or directory containing emin file
+        direction : int | str
+            Desired current direction (0|'x', 1|'y', 2|'z')
+
+        Returns
+        -------
+        None
+        """
+        
+        # Map between direction string and column index
+        if direction in [0, 1, 2]:
+            direction = {0: 'x', 1: 'y', 2: 'z'}[direction]
+
+        column_dict = {'x': 3, 'y': 4, 'z': 5}
+        
+        # Handle exceptions and warnings
+        if direction not in column_dict:
+            raise ValueError(f'Direction must be "x"/0, "y"/1, or "z"/2 (provided "{direction}")')
+            
+        # identify start and end of current source definition
+        i0 = self.find('!CURRENT DENSITY SOURCE') + 4 #assumes 4-line offset to start of point list
+        i1 = self.find_next(i0, '', exact=True) - 1
+
+        # Only retain lines with non-zero values in the desired column
+        column = column_dict[direction]
+
+        lines_filtered = [line for line in self.lines[i0:i1] if float(line.split()[column]) != 0]
+        self.replace((i0, i1), lines_filtered)
+
+        if len(lines_filtered) == 0:
+            warnings.warn(f'No {direction}-directed source elements found; probe definition deleted.')
