@@ -539,6 +539,7 @@ class Emin:
             warnings.warn(f'No {direction}-directed source elements found; probe definition deleted.')
 
 
+    @staticmethod
     def find_emin(path):
         """Helper function to identify an emin file within a directory.
         
