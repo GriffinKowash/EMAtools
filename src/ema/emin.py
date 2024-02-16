@@ -495,7 +495,6 @@ class Emin:
             self.replace(i, text)
             
 
-
     def restrict_surface_current(self, direction):
         """Restricts surface current definition in emin file to a single direction.
         
@@ -538,3 +537,42 @@ class Emin:
 
         if len(lines_filtered) == 0:
             warnings.warn(f'No {direction}-directed source elements found; probe definition deleted.')
+
+
+    def find_emin(path):
+        """Helper function to identify an emin file within a directory.
+        
+        The "path" argument can also point directly to the emin file rather
+        than the containing directory to improve flexibility for users.
+        
+        Parameters
+        ----------
+        path : str
+            Path to emin file or directory containing emin file
+
+        Returns
+        -------
+        str | None
+            Full path and name to emin file, or None if absent.
+        """
+        
+        # check for existence of file/directory
+        if not os.path.exists(path):
+            raise Exception(f'Path specified by user does not exist. ({path})')
+        
+        # determine emin path and name from "path" argument
+        if path.split('.')[-1] == 'emin':
+            path_and_name = path
+        
+        else:
+            emins = glob.glob('\\'.join([path, '*.emin']))
+            
+            if len(emins) > 0:
+                path_and_name = emins[0]
+                if len(emins) > 1:
+                    warnings.warn(f'Multiple emin files found in directory; selecting {path_and_name}.')
+                    
+            else:
+                raise Exception(f'No emin file found in specified directory ({path})')
+                
+        return path_and_name
