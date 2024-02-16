@@ -115,7 +115,7 @@ def trim_to_time(t, x, t0, t1=None):
     return t_trim, x_trim
 
 
-def pad_array_to_length(x, size, val=0):
+def pad(x, size, val=0):
     """Pads an array with entries of "val" along 0th axis to match size.
     
     Parameters
@@ -146,8 +146,8 @@ def pad_array_to_length(x, size, val=0):
     return x_new
 
 
-def pad_data_to_time(t, x, endtime, val=0):
-    """Pads both time steps and measurements to the desired end time; wrapper for pad_array_to_length.
+def pad_to_time(t, x, endtime, val=0):
+    """Pads time steps and measurements to the desired end time; wrapper for signal.pad.
     
     Parameters
     ----------
@@ -216,5 +216,5 @@ def resample(t, x, steps, mode='linear'):
 
 
 ### Aliases ###
-pad_to_time = pad_data_to_time
-pad = pad_array_to_length
+pad_data_to_time = pad_to_time
+pad_array_to_length = pad
