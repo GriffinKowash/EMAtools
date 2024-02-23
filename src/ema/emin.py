@@ -18,7 +18,8 @@ class Emin:
             self.path = path
             
         with open(self.path, 'r') as file:
-            self.lines = file.read().splitlines()
+            self.lines = file.readlines()
+            #self.lines = file.read().splitlines()
         
         
     def save(self, path=None):
@@ -39,7 +40,8 @@ class Emin:
             
         with open(path, 'w') as file:
             # TODO: clean up management of newline characters
-            file.writelines([line + '\n' for line in self.lines])
+            file.writelines(self.lines)
+            #file.writelines([line + '\n' for line in self.lines])
             
         
     @staticmethod
@@ -527,7 +529,7 @@ class Emin:
             
         # identify start and end of current source definition
         i0 = self.find('!CURRENT DENSITY SOURCE') + 4 #assumes 4-line offset to start of point list
-        i1 = self.find_next(i0, '', exact=True) - 1
+        i1 = self.find_next(i0, '\n', exact=True) - 1 #end before next blank line
 
         # Only retain lines with non-zero values in the desired column
         column = column_dict[direction]
