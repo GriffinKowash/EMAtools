@@ -118,10 +118,12 @@ class Emin(File):
         column = column_dict[direction]
 
         lines_filtered = [line for line in self.lines[i0:i1] if float(line.split()[column]) != 0]
-        self.replace((i0, i1), lines_filtered)
 
         if len(lines_filtered) == 0:
-            warnings.warn(f'No {direction}-directed source elements found; probe definition deleted.')
+            warnings.warn(f'No {direction}-directed source elements found; probe definition not changed.')
+
+        else:
+            self.replace((i0, i1), lines_filtered)
 
 
     @staticmethod
