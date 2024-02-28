@@ -105,7 +105,7 @@ class File:
         return i + 1
         
         
-    def find_occurrences(self, text, start=0, exact=False, case=True, n_max=None):
+    def find_all(self, text, start=0, exact=False, case=True, n_max=None):
         """Finds indices of all occurrences of a text string in self.lines.
 
         Parameters
@@ -144,7 +144,7 @@ class File:
                 n_found += 1
                 
                 if n_found == n_max:
-                    return np.array(indices)
+                    break
             
         if n_found == 0:
             print(f'Text string "{text}" not found in file.')
@@ -153,7 +153,7 @@ class File:
         
         
     def find(self, text, n=1, **kwargs):
-        """Finds index of nth occurrence of text string in self.lines
+        """Finds index of nth occurrence (default first) of text string in self.lines.
 
         Parameters
         ----------
@@ -161,10 +161,7 @@ class File:
             Text string for which to search file.
         n : int (optional)
             Which occurrence of text to select (n=1 for first occurrence)
-        exact : bool (optional)
-            Whether line must exactly match or simply contain text string.
-        case : bool (optional)
-            Whether to require case matching.
+        **kwargs : see File.find_all
             
         Returns
         -------
@@ -172,12 +169,12 @@ class File:
             Index of text string in self.lines; None if not present.
         """
         
-        indices = self.find_occurrences(text, n_max=n, **kwargs)
+        indices = self.find_all(text, n_max=n, **kwargs)
         
         if len(indices) > 0:
             return indices[-1]
         else:
-            return indices
+            return None
         
 
     def find_next(self, i, text, **kwargs):
@@ -189,6 +186,7 @@ class File:
             Index at which to begin search.
         text : str
             Text string for which to search file.
+        **kwargs : see File.find_all
             
         Returns
         -------
@@ -296,13 +294,16 @@ class File:
             text = [text]
         
         # find start/stop indices
-        if isinstance(i, np.integer):
+        if isinstance(i, (int, np.integer)):
             i0 = i
             i1 = i0 + len(text) - 1
 
         elif np.iterable(i):
             # TODO: warning for len(i) > 2
             i0, i1 = i
+
+        else:
+            print('Unrecognized type for index i:', type(i))
         
         # handle case where self.lines is too short
         if i1 > len(self.lines):
@@ -436,3 +437,7 @@ class File:
         """
         
         self.printlines(1, n)
+
+
+    ### Aliases for backward compatibility ###
+    find_occurrences = find_all
