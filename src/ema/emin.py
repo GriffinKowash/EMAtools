@@ -59,7 +59,7 @@ class Emin(File):
         # Modify emin lines
         text = None
         
-        for index in self.find_occurrences(f'* MATERIAL : {name}'):
+        for index in self.find_all(f'* MATERIAL : {name}'):
             i = index + 4 #assumes properties are four lines below name
             
             if text is None:
