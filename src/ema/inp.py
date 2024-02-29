@@ -14,3 +14,8 @@ class Inp(File):
         """Initializes Inp object from path and filename."""
         
         File.__init__(self, path)
+
+
+    def probe_voltage(self, ):
+        pass
+        # 1. 
