@@ -90,8 +90,6 @@ class Emin(File):
         
         Parameters
         ----------
-        path : str
-            Path to emin file or directory containing emin file
         direction : int | str
             Desired current direction (0|'x', 1|'y', 2|'z')
 
