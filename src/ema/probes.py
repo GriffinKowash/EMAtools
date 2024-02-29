@@ -6,6 +6,34 @@ import glob
 import numpy as np
 
 
+def load_probe(path_and_name, precision='single'):
+    """Loads a generic probe file.
+
+    Assumes that each time step is listed on a single line in the file.
+    For this reason, box or distributed probes must be loaded with their own functions.
+    The user is responsible for unpacking the results based on the expected column count.
+    """
+
+    # Handle exceptions
+    if not os.path.exists(path_and_name):
+        raise FileNotFoundError(f'File {path_and_name} does not exist.')
+
+    # Attempt to load data file
+    try:
+        data = np.loadtxt(path_and_name)
+
+    except ValueError as e:
+        # ValueError occurs when number of columns in inconsistent (e.g. for box probe results)
+        print(e)
+        print('Verify that the data file being loaded was not produced by a box, distributed, or animation probe.')
+
+    except Exception as e:
+        print(e)
+
+    # Return transpose of data for easy unpacking
+    return data.T
+
+
 def load_distributed_probe(path_and_name, last_index='probe', precision='single'):
     """Converts distributed and box probe results into a numpy array.
     
