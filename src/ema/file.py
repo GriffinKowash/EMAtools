@@ -54,10 +54,13 @@ class File:
 
         Returns
         -------
-        int | np.ndarray
-            Indices corresponding to line numbers.
+        int | np.ndarray | None
+            Indices corresponding to line numbers, or None.
         """
         
+        # Return None if first arg is None
+        if args[0] is None:
+            return None
 
         # Accept either an iterable in the first position or multiple line numbers
         if np.iterable(args[0]):
@@ -88,9 +91,13 @@ class File:
 
         Returns
         -------
-        int | np.ndarray
-            Line number(s) corresponding to index/indices.
+        int | np.ndarray | None
+            Line number(s) corresponding to index/indices, or None if argument is None.
         """
+
+        # Return None if first arg is None
+        if args[0] is None:
+            return None
                 
         # Accept either an iterable in the first position or multiple indices
         if np.iterable(args[0]):
@@ -421,6 +428,25 @@ class File:
                 n = l0 + i
             
             print(n, '\t|', line)
+
+
+    def print(self, i0, i1=None):
+        """
+        Prints out indices i0 to i1 (0-based indexing); wrapper for File.printlines.
+
+        Parameters
+        ----------
+        i0 : int | array-like
+            First index to print, or array of indices to print.
+        i1 : int
+            Last index to print.
+
+        Returns
+        -------
+        None
+        """
+
+        self.printlines(self.itol(i0), self.itol(i1))
             
                 
     def head(self, n=10):
