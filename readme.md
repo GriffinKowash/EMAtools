@@ -30,8 +30,12 @@ An assortment of computational tools to make life easier at EMA. Tools are focus
 		- **[Replacing](#replacing)**
 		- **[Saving](#saving)**
 	- **[Emin class](#emin-class)**
+		- **[Instantiating an Emin object](#instantiating-an-emin-object)**
 		- **[Modify isotropic material](#modify-isotropic-material)**
 		- **[Restrict surface current](#restrict-surface-current)**
+	- **[Inp class](#inp-class)**
+		- **[Instantiating an Inp object](#instantiating-an-inp-object)**
+		- **[Probing voltage/current](#probing-voltagecurrent)**
 
 
 # Installation
@@ -434,7 +438,7 @@ file.save('path/to/new/file.ext')
 
 ## Emin class
 
-The Emin class inherits all functionality of the File class described above and implements several Emin-specific methods to streamline pre-processing.
+The Emin class inherits all functionality of the File class described above and implements several methods specific to EMC Plus.
 
 
 ### Instantiating an Emin object
@@ -505,3 +509,64 @@ Afterward, only the y-oriented elements remain:
 ```
 
 If no current elements are aligned in the requested direction, the probe definition will remain unchanged and a warning will be raised.
+
+
+## Inp class
+
+The Inp class inherits all functionality of the File class described above and implements several methods specific to MHARNESS.
+
+
+### Instantiating an Inp object
+
+As with the File parent class, an Inp object is instantiated from a file path:
+
+```
+from ema import Inp
+inp = Inp('path/to/file.inp')
+```
+
+
+### Probing voltage/current
+
+The `Inp.probe_voltage` and `Inp.probe_current` methods allow the user to add voltage and current pin probes to a harness.
+
+  The three required arguments are:
+- `segment` (name of the MHARNESS segment to probe)
+- `conductor` (name of the conductor within the segment)
+- `index` (mesh index at which to place probe)
+
+The following keyword arguments are optional:
+- `name` (name of probe, used for output filename)
+- `start` (measurement start time; zero by default)
+- `end` (measurement end time; matches domain by default)
+- `timestep` (measurement timestep; matches domain by default)
+
+For example, the following lines place a voltage probe on conductor "C1" in segment "SEG" at mesh index 12 with default time settings:
+
+```
+inp.probe_voltage('SEG', 'C1', 12)
+```
+
+To create a current probe at the same location with alternative name and time settings:
+
+```
+inp.probe_current('SEG', 'C1', 12, name='current_probe', start=1e-9, end=1e-7, timestep=1e-12)
+```
+
+`Inp.print` can be used to view the result of the previous two operations:
+
+```
+120 	| !PROBE
+121 	| !!CABLE CURRENT
+122 	| current_probe.dat  
+123 	| 1.0000000000E-09    1.0000000000E-07    1.0000000000E-12   
+124 	| SEG      C1      12  
+125 	| 
+126 	| !PROBE
+127 	| !!CABLE VOLTAGE
+128 	| voltage_SEG_C1_12.dat  
+129 	| 0.0000000000E+00    9.9999812000E-07    8.3600000000E-12   
+130 	| SEG      C1      12  
+```
+
+Note that `Inp.probe_voltage` and `Inp.probe_current` do not verify that the segment and conductor names provided by the user exist in the HARNESS.
