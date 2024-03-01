@@ -20,6 +20,8 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 		- **[Trimming](#trimming)**
 		- **[Padding](#padding)**
 		- **[Resampling](#resampling)**
+	- **[EMC module](#emc_module)**
+		- **[Shielding effectiveness](#shielding-effectiveness)**
 	- **[File class](#file-class)**
 		- **[Instantiating a File object](#instantiating-a-file-object)**
 		- **[Accessing contents](#accessing-contents)**
@@ -192,6 +194,56 @@ t_res, x_res = ema.resample(t, x, t0)
 ```
 
 This tool can also be applied to simulations with magnetostatic scaling, where the original time steps are non-uniform. Care should be taken to ensure that the limitations to the frequency content of the original data are understood.
+
+
+## EMC module
+
+The EMC module contains functionality related to electromagnetic compatibility analysis.
+
+
+### Shielding effectiveness
+
+The `shielding` function calculates shielding effectiveness from time series measurements and a reference waveform. For example, given measurements `t, x` and a reference array `x_ref`, the shielding effectiveness can be calculated as:
+
+```
+f, se = ema.shielding(t, x, x_ref)
+```
+
+where `f` is the frequency array and `se` is the shielding effectiveness in decibels.
+
+  The array `x` may have arbitrary dimensions, allowing shielding to be calculated for multiple sets of measurements at once. For example, the following lines calculate the shielding effectiveness for each sample point in an electric field box probe:
+  
+```
+# Load reference and measurement probes
+t, e = ema.load_box_probe("box_probe.dat")
+t_ref, ex_ref, ey_ref, ez_ref = ema.load_probe("reference_probe.dat")
+
+# Calculate E-field magnitudes
+e_mag = np.sqrt(np.sum(e**2, axis=1))
+e_ref_mag = np.sqrt(np.sum(ex**2 + ey**2 + ez**2))
+
+# Calculate shielding
+f, se = ema.shielding(t, e_mag, e_ref_mag)
+```
+
+By default, time is expected to be aligned along the first axis of `x`. For alternative formats, the "axis" argument can be provided:
+
+```
+f, se = ema.shielding(t, x, x_ref, axis=1)
+```
+
+Note that `x` and `x_ref` must have the same number of elements and should correspond to the same time steps. The tools from the `signal` module can be used to fix any discrepancies in this respect. For example, if the reference waveform `x_ref` cuts off at 1e-8s while the measurement `x` extends to 1e-6s, and both signals have the same timestep, the following operation should be valid:
+
+```
+t_ref_pad, x_ref_pad = ema.pad_to_time(t_ref, x_ref, 1e-6)
+f, se = ema.shielding(t, x, x_ref_pad)
+```
+
+If the arrays still have minor discrepancies due to machine precision issues, the padded array can be resampled to exactly match the timesteps `t` of the measured data:
+
+```
+t_ref_resamp, x_ref_resamp = ema.resample(t_ref_pad, x_ref_pad, t)
+```
 
 
 ## File class
