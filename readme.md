@@ -31,8 +31,8 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 		- **[Saving](#saving)**
 	- **[Emin class](#emin-class)**
 		- **[Instantiating an Emin object](#instantiating-an-emin-object)**
-		- **[Modify isotropic material](#modify-isotropic-material)**
-		- **[Restrict surface current](#restrict-surface-current)**
+		- **[Modifying isotropic materials](#modify-isotropic-material)**
+		- **[Restricting surface currents](#restrict-surface-current)**
 	- **[Inp class](#inp-class)**
 		- **[Instantiating an Inp object](#instantiating-an-inp-object)**
 		- **[Probing voltage/current](#probing-voltagecurrent)**
@@ -451,7 +451,7 @@ emin = Emin('path/to/file.emin')
 ```
 
 
-### Modify isotropic material
+### Modifying isotropic materials
 
 The `Emin.modify_isotropic_material` method allows the user to modify the physical properties of all instances of an isotropic material. For example, the conductivity of a material named "CFRP" can be set to 300 S/m as follows:
 
@@ -470,7 +470,7 @@ The following keyword arguments can optionally be provided:
 Note that if both `eps_rel` and `eps` or `mu_rel` and `mu` are provided, the relative value will be used and the absolute value discarded.
 
 
-### Restrict surface current
+### Restricting surface currents
 
 As of EMA3D 2024R1, surface current definitions are always generated with current elements in both of the tangent directions. The `Emin.restrict_surface_current` method restricts the surface current to a single coordinate direction. One application of this tool is shielding effectiveness submodels, where it may be desirable to use a surface current to generate a plane wave polarized along a coordinate axis.
 
