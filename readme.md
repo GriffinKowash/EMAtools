@@ -2,9 +2,9 @@
 
 # Description
 
-An assortment of computational tools to make life easier at EMA. Tools are focused on automation of tasks that require:
+An assortment of computational Python tools to make life easier at EMA. Focuses on automation of tasks that require:
 - Analysis of simulation results
-- Bulk editing of many simulation files
+- Bulk editing of simulation files
 - Complex preprocessing operations
 
 
@@ -46,13 +46,13 @@ EMAtools can be installed using the Pip package manager:
 pip install ematools
 ```
 
-Check for updates periodically to access new features and bug fixes:
+Check for updates periodically to access new features and improvements:
 
 ```
 pip install --upgrade ematools
 ```
 
-EMAtools can then be imported in a script or shell as follows:
+Import EMAtools in a Python script or shell:
 
 ```
 import ema
@@ -60,7 +60,7 @@ import ema
 
 # Usage
 
-When in doubt, refer to in-code documention for the feature in question at https://github.com/GriffinKowash/EMAtools/tree/main/src/ema. Please notify Griffin at griffin.kowash@ema3d.com if any observed behavior contradicts the documentation.
+When in doubt, refer to in-code documention for the feature in question at https://github.com/GriffinKowash/EMAtools/tree/main/src/ema. Please notify Griffin at griffin.kowash@ema3d.com if any conflicts between documentation and true behavior are observed.
 
 ## Probes module
 
@@ -82,7 +82,7 @@ Note that for time series results, the first index of the ```results``` array wi
 
 ### Loading box/distributed probe results
 
-Loading box and distributed probe results requires the `load_box_probe` function:
+Loading box and distributed probe results requires the `load_box_probe` function or its alias `load_distributed_probe`:
 
 ```
 t, data = ema.load_box_probe('path/to/box_probe.dat')
@@ -133,7 +133,7 @@ f, xfft = ema.rfft(t, x)
 f, xfft = ema.rfft(t, x, axis=1)
 ```
 
-If the first and last values of a time series measurement are not equal, the discontinuity will introduce erroneous spectral content to the FFT. Window functions are often used to address this problem. A Hann window can easily be applied using the `window` keyword argument:
+If the first and last values of a time series measurement are not equal, the discontinuity will introduce erroneous spectral content to the FFT. Window functions are often used to address this problem. A Hann window can be applied using the `window` keyword argument:
 
 ```
 f, xfft = ema.rfft(t, x, window='Hann')
@@ -196,11 +196,11 @@ This tool can also be applied to simulations with magnetostatic scaling, where t
 
 ## File class
 
-The Emin, Inp, and Cin classes help streamline the pre-processing workflow in two ways:
+The `Emin`, `Inp`, and `Cin` classes help streamline the pre-processing workflow in two ways:
 - By enabling the bulk modification of arbitrarily many simulation files
-- By providing functionality that is impractical or impossible to achieve via the GUI
+- By providing functionality that is impractical or impossible to achieve manually
 
-All three classes inherit their base functionality from the File class, which contains general methods to facilitate the editing of simulation files. These are the core tools used to implement more complex operations specific to each file type.
+All three classes inherit their base functionality from the `File` class, which contains general methods to facilitate the editing of simulation files. These are the core tools used to implement more complex operations specific to each file type.
 
 ### Instantiating a File object
 A File object is instantiated by providing a file path to the constructor:
@@ -312,7 +312,7 @@ Several optional keyword arguments can be set to refine the search parameters.
 As an example, the following command will locate case-insensitive exact matches to the string "* geometry: line", beginning at index 150 and exiting after five matches have been found:
   
   ```
-  indices = file.find_all('* geometry: line', start=150, exact=False, case=False, n_max=5)
+  indices = file.find_all('* geometry: line', start=150, exact=True, case=False, n_max=5)
   ```
   
 `File.find` is a wrapper method for `File.find_all` that finds a single match to the search string rather than returning a list of all matches. To find the first instance of "!NEW PROBE FILE NAME":
@@ -438,12 +438,12 @@ file.save('path/to/new/file.ext')
 
 ## Emin class
 
-The Emin class inherits all functionality of the File class described above and implements several methods specific to EMC Plus.
+The `Emin` class inherits all functionality of the `File` class described above and implements several methods specific to EMC Plus.
 
 
 ### Instantiating an Emin object
 
-As with the File parent class described above, an Emin object is instantiated from a file path:
+As with the `File` parent class, an `Emin` object is instantiated from a file path:
 
 ```
 from ema import Emin
@@ -459,25 +459,25 @@ The `Emin.modify_isotropic_material` method allows the user to modify the physic
 emin.modify_isotropic_material('CRFP', sig=300)
 ```
 
-The full list of optional keyword arguments is:
-- `sig` (electric conductivity)
-- `sigm` (magnetic conductivity)
-- `eps` (absolute permittivity)
-- `mu` (absolute permeability)
-- `eps_rel` (relative permittivity)
-- `mu_rel` (relative permeability)
+The following keyword arguments can optionally be provided:
+- `sig` — electric conductivity
+- `sigm` — magnetic conductivity
+- `eps` — absolute permittivity
+- `mu` — absolute permeability
+- `eps_rel` — relative permittivity
+- `mu_rel` — relative permeability
 
 Note that if both `eps_rel` and `eps` or `mu_rel` and `mu` are provided, the relative value will be used and the absolute value discarded.
 
 
 ### Restrict surface current
 
-As of EMA3D 2024R1, surface current definitions can only be generated with current elements in both of the tangent directions. The `Emin.restrict_surface_current` method restricts the surface current to a single coordinate direction. One application of this tool is shielding effectiveness submodels, where it may be desirable to use a surface current to generate a plane wave polarized along a coordinate axis.
+As of EMA3D 2024R1, surface current definitions are always generated with current elements in both of the tangent directions. The `Emin.restrict_surface_current` method restricts the surface current to a single coordinate direction. One application of this tool is shielding effectiveness submodels, where it may be desirable to use a surface current to generate a plane wave polarized along a coordinate axis.
 
   The method is called with a string specifying the desired direction (x, y, or z) of the current. For example, to restrict the current to the y direction:
   
 ```
-Emin.restrict_surface_current('y')
+Emin.restrict_surface_current("y")
 ```
 
 Prior to the method call, the source definition contains both x- and y-oriented current elements:
@@ -518,7 +518,7 @@ The Inp class inherits all functionality of the File class described above and i
 
 ### Instantiating an Inp object
 
-As with the File parent class, an Inp object is instantiated from a file path:
+As with the `File` parent class, an `Inp` object is instantiated from a file path:
 
 ```
 from ema import Inp
@@ -531,31 +531,35 @@ inp = Inp('path/to/file.inp')
 The `Inp.probe_voltage` and `Inp.probe_current` methods allow the user to add voltage and current pin probes to a harness.
 
   The three required arguments are:
-- `segment` (name of the MHARNESS segment to probe)
-- `conductor` (name of the conductor within the segment)
-- `index` (mesh index at which to place probe)
+- `segment` — name of the MHARNESS segment to probe
+- `conductor` — name of the conductor within the segment
+- `index` — mesh index at which to place probe
 
 The following keyword arguments are optional:
-- `name` (name of probe, used for output filename)
-- `start` (measurement start time; zero by default)
-- `end` (measurement end time; matches domain by default)
-- `timestep` (measurement timestep; matches domain by default)
+- `name` — name of probe, used for output filename
+- `start` — measurement start time; zero by default
+- `end` — measurement end time; matches domain by default
+- `timestep` — measurement timestep; matches domain by default
 
-For example, the following lines place a voltage probe on conductor "C1" in segment "SEG" at mesh index 12 with default time settings:
+For example, the following command places a voltage probe on conductor C1 in segment SEG at mesh index 12 with default time settings:
 
 ```
-inp.probe_voltage('SEG', 'C1', 12)
+inp.probe_voltage("SEG", "C1", 12)
 ```
 
 To create a current probe at the same location with alternative name and time settings:
 
 ```
-inp.probe_current('SEG', 'C1', 12, name='current_probe', start=1e-9, end=1e-7, timestep=1e-12)
+inp.probe_current("SEG", "C1", 12, name='current_probe', start=1e-9, end=1e-7, timestep=1e-12)
 ```
 
 `Inp.print` can be used to view the result of the previous two operations:
 
 ```
+116 	| * -----------------------------------------------------------------------------
+117 	| * ------------------------ Section 14: OUTPUT / PROBES ------------------------
+118 	| * -----------------------------------------------------------------------------
+119 	| 
 120 	| !PROBE
 121 	| !!CABLE CURRENT
 122 	| current_probe.dat  
@@ -569,4 +573,4 @@ inp.probe_current('SEG', 'C1', 12, name='current_probe', start=1e-9, end=1e-7, t
 130 	| SEG      C1      12  
 ```
 
-Note that `Inp.probe_voltage` and `Inp.probe_current` do not verify that the segment and conductor names provided by the user exist in the HARNESS.
+Note that `Inp.probe_voltage` and `Inp.probe_current` do not verify whether the segment and conductor names provided by the user actually exist in the harness.
