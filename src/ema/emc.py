@@ -1,27 +1,25 @@
 import warnings
-import time
-import os
-import glob
-
 import numpy as np
 
+from .signal import rfft
 
-def shielding(t, x, xref):
+
+def shielding(t, x, xref, axis=0):
     """Calculates shielding effectiveness from time series data.
     
-    The result is normalized such that the FFT provides the true amplitude of each frequency.
-    
-    The data array (x) is expected to have time steps along the first axis. Multiple data sets
-    can be processed simultaneously by stacking along additional axes.
+    Default settings require x to have time along the first axis.
+    Multiple data sets can be processed simultaneously by stacking along additional axes.
     
     Parameters
     ----------
     t : np.ndarray
-        Time step data (1d)
+        Timestep array (1d)
     x : np.ndarray
-        Time series data (nd)
+        Measurement time series (nd)
     xref: np.ndarray
-        Time series data for reference waveform (nd)
+        Reference time series (1d)
+    axis : int (optional)
+        Time axis along which to calculate shielding
 
     Returns
     -------
@@ -33,21 +31,21 @@ def shielding(t, x, xref):
     if t.ndim > 1:
         raise ValueError(f'Array t must have exactly one dimension; {t.ndim} provided.')
         
-    elif x.shape[-1] != t.size:
-        raise ValueError(f'Last dimension of x ({x.shape[-1]}) must match size of t ({t.size}).')
+    elif x.shape[axis] != t.size:
+        raise ValueError(f'x dimension {axis} ({x.shape[axis]}) must match size of t ({t.size}).')
         
-    elif np.any(xref.shape != x.shape):
-        raise ValueError(f'Shape of xref ({xref.shape}) must match x ({x.shape}).')
+    elif x.shape[axis] != xref.size:
+        raise ValueError(f'x dimension {axis} ({x.shape[axis]}) must match size of xref ({xref.size}).')
         
     elif np.any(np.iscomplex(x)):
         warnings.warn(f'Array x has complex dtype {x.dtype}; imaginary components will be disregarded, which may affect results.')
     
-    # Compute FFTs and frequency array
-    f = np.fft.rfftfreq(t.size) / (t[1] - t[0])
-    x_fft = np.fft.rfft(x, norm='forward', axis=0) * 2
-    xref_fft = np.fft.rfft(xref, norm='forward', axis=0) * 2
-    
-    # Compute shielding (dB)
-    se = 20 * np.log10(np.abs(xref_fft / x_fft))
+    # Compute FFTs
+    f, x_fft = rfft(t, x, axis)
+    _, xref_fft = rfft(t, xref)
+
+    # Compute shielding in dB
+    # TODO: decide on alternative to swapaxes
+    se = 20 * np.log10(np.abs(np.swapaxes(xref_fft / np.swapaxes(x_fft, -1, axis), -1, axis)))
     
     return f, se
