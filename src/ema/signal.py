@@ -39,7 +39,7 @@ def rfft(t, x, axis=0, window=None):
         raise ValueError(f'Array t must have exactly one dimension; {t.ndim} provided.')
         
     elif t.size != x.shape[axis]:
-        raise ValueError(f'Dimension of x axis {axis} ({x.shape[-1]}) must match size of t ({t.size}).')
+        raise ValueError(f'Dimension of x axis {axis} ({x.shape[axis]}) must match size of t ({t.size}).')
         
     elif np.any(np.iscomplexobj(x)):
         warnings.warn(f'Array x has complex dtype {x.dtype}; imaginary components will be discarded, which may affect results.')
