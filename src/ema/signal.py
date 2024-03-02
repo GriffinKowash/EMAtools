@@ -7,12 +7,12 @@ import numpy as np
 import scipy
 
 
-def rfft(t, x, axis=0, window=None):
+def rfft(t, x, axis=-1, window=None):
     """Calculates FFT from real time series data.
     
     The result is normalized such that the FFT provides the true amplitude of each frequency.
     
-    The data array (x) is expected to have time steps along the first axis. Multiple data sets
+    The data array x is expected to have time steps along the last axis. Multiple data sets
     can be processed simultaneously by stacking along additional axes.
     
     Parameters
@@ -32,7 +32,11 @@ def rfft(t, x, axis=0, window=None):
         A tuple of ndarrays of the form (frequency, FFT)
     """
     
-    windows = {'hann': np.hanning}
+    windows = {'hann': np.hanning,
+               'hamming': np.hamming,
+               'bartlett': np.bartlett,
+               'blackman': np.blackman,
+               'kaiser': np.kaiser}
     
     # Handle errors and warnings
     if t.ndim > 1:
@@ -43,18 +47,19 @@ def rfft(t, x, axis=0, window=None):
         
     elif np.any(np.iscomplexobj(x)):
         warnings.warn(f'Array x has complex dtype {x.dtype}; imaginary components will be discarded, which may affect results.')
+
+    # Apply window function
+    if window is not None:
+        if window.lower() in windows:
+            window_func = windows[window.lower()]
+            window_array = window_func(x.shape[axis])
+            x = np.swapaxes(np.swapaxes(x, -1, axis) * window_array, -1, axis)
+
+        else:
+            warnings.warn(f'Provided invalid window type "{window}"; window will default to rectangular.')
         
-    if window is not None and window not in windows:
-        warnings.warn(f'Provided invalid window type "{window}"; window will default to rectangular.')
-    
-    # Apply window
-    if window in windows:
-        window_func = windows[window]
-        # TODO: allow user to specify arbitrary axis axis for time steps
-        window_array = window_func(x.shape[0])
-        x = np.swapaxes(np.swapaxes(x, -1, axis) * window_array, -1, axis)
-    
     # Compute FFT and frequency array
+    # TODO: warning for non-uniform timesteps
     f = np.fft.rfftfreq(t.size) / (t[1] - t[0])
     x_fft = np.fft.rfft(x, norm='forward', axis=axis) * 2
         
@@ -62,10 +67,10 @@ def rfft(t, x, axis=0, window=None):
 
 
 def trim_to_time(t, x, t0, t1=None):
-    # TODO: accept either single arg (endtime cutoff) or two args (slice)
+    # TODO: accept either single arg (end time) or two args (start/end slice)
     """Trims time domain data to a specified cutoff time.
-    
-    Can be used on a single 
+
+    Array x may have arbitrary dimensions as long as the last axis corresponds to time.
     
     Parameters
     ----------
@@ -97,8 +102,8 @@ def trim_to_time(t, x, t0, t1=None):
     if t.ndim > 1:
         raise ValueError(f'Array t must have exactly one dimension; {t.ndim} provided.')
         
-    elif x.shape[0] != t.size:
-        raise ValueError(f'First dimension of x ({x.shape[0]}) must match size of t ({t.size}).')
+    elif x.shape[-1] != t.size:
+        raise ValueError(f'last dimension of x ({x.shape[-1]}) must match size of t ({t.size}).')
         
     elif end < 0:
         raise ValueError(f'Start and end times ({start}, {end}) must be greater than or equal to zero.')
@@ -110,55 +115,58 @@ def trim_to_time(t, x, t0, t1=None):
     i_start = np.abs(t - start).argmin()
     i_end = np.abs(t - end).argmin()
     t_trim = t[i_start:i_end]
-    x_trim = x[i_start:i_end, ...]
+    x_trim = x[..., i_start:i_end]
     
     return t_trim, x_trim
 
 
 def pad(x, size, val=0):
-    """Pads an array with entries of "val" along 0th axis to match size.
+    """Pads an nd array with entries of "val" along last axis to match size.
     
     Parameters
     ----------
     x : np.ndarray
-        Array to pad (currently only supports 1D)
+        Array to pad (nd)
     size : int
         Desired size of padded array
     val : float (optional)
-        Value to pad with (defaults to zero)
+        Value to pad with (default zero)
 
     Returns
     -------
     np.ndarray
         Padded array
     """
-    
+
     # Handle exceptions
-    # TODO: support arbitrary padding dimensions
-    if x.ndim > 1:
-        raise ValueError(f'pad_array_to_length currently only supports 1D arrays ({x.ndim}D array provided).')
-    
+    if size <= x.shape[-1]:
+        warnings.warn(f'Argument "size" ({size}) must be greater than x.shape[-1] ({x.shape[-1]}); returning original array.')
+        return x
+
     # Create padded array
-    # TODO: match dtype of val and/or original array    
-    padding = val * np.ones(size - x.size)
-    x_new = np.concatenate([x, padding])
+    pad_shape = list(x.shape)
+    pad_shape[-1] = size - x.shape[-1]
+    padding = val * np.ones(pad_shape)
+    x_new = np.concatenate([x, padding], axis=-1)
     
     return x_new
 
 
 def pad_to_time(t, x, endtime, val=0):
-    """Pads time steps and measurements to the desired end time; wrapper for signal.pad.
+    """Pads time steps and measurements to a given end time; wrapper for signal.pad.
+
+    Array x may have arbitrary dimensions as long as the last axis corresponds to time.
     
     Parameters
     ----------
     t : np.ndarray
-        time steps
+        time steps (1d)
     x : np.ndarray
-        data to pad (currently only supports 1D)
+        data to pad (nd)
     endtime : float
-        Desired end time of padded data
+        Desired end time
     val : float (optional)
-        Value to pad with (defaults to zero)
+        Value to pad with (default zero)
 
     Returns
     -------
@@ -168,7 +176,7 @@ def pad_to_time(t, x, endtime, val=0):
     
     dt = t[1] - t[0]
     t_padded = np.arange(t[0], endtime + dt, dt)
-    x_padded = pad_array_to_length(x, t_padded.size, val=val)
+    x_padded = pad(x, t_padded.size, val=val)
     
     return t_padded, x_padded
 
@@ -182,9 +190,9 @@ def resample(t, x, steps, mode='linear'):
     Parameters
     ----------
     t : np.ndarray
-        original time steps
+        original time steps (1d)
     x : np.ndarray
-        data to resample
+        data to resample (nd)
     steps : float | np.ndarray
         Desired time step, or custom array of sample times
     mode : str (optional)
