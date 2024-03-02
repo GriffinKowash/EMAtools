@@ -7,6 +7,13 @@ import numpy as np
 import scipy
 
 
+windows = {'hann': np.hanning,
+           'hamming': np.hamming,
+           'bartlett': np.bartlett,
+           'blackman': np.blackman,
+           'kaiser': np.kaiser}
+
+
 def rfft(t, x, axis=-1, window=None):
     """Calculates FFT from real time series data.
     
@@ -32,12 +39,6 @@ def rfft(t, x, axis=-1, window=None):
         A tuple of ndarrays of the form (frequency, FFT)
     """
     
-    windows = {'hann': np.hanning,
-               'hamming': np.hamming,
-               'bartlett': np.bartlett,
-               'blackman': np.blackman,
-               'kaiser': np.kaiser}
-    
     # Handle errors and warnings
     if t.ndim > 1:
         raise ValueError(f'Array t must have exactly one dimension; {t.ndim} provided.')
@@ -52,7 +53,7 @@ def rfft(t, x, axis=-1, window=None):
     if window is not None:
         if window.lower() in windows:
             window_func = windows[window.lower()]
-            window_array = window_func(x.shape[axis])
+            window_array = window_func(x.shape[axis], beta=14) if window.lower() == 'kaiser' else window_func(x.shape[axis])
             x = np.swapaxes(np.swapaxes(x, -1, axis) * window_array, -1, axis)
 
         else:
@@ -121,7 +122,7 @@ def trim_to_time(t, x, t0, t1=None):
 
 
 def pad(x, size, val=0):
-    """Pads an nd array with entries of "val" along last axis to match size.
+    """Pads an nd array x with entries of "val" along last axis to match size.
     
     Parameters
     ----------
@@ -183,6 +184,8 @@ def pad_to_time(t, x, endtime, val=0):
 
 def resample(t, x, steps, mode='linear'):
     """Resamples time series data using linear interpolation to a specified time step.
+
+    If x has two or more dimensions, resampling will be applied along the last axis.
     
     Typical use cases relate to frequency domain operations between data sets with different
     time steps, including non-uniform time series produced by magnetostatic scaling.
@@ -204,22 +207,31 @@ def resample(t, x, steps, mode='linear'):
         Tuple (t_resamp, x_resamp) of the resampled data
     """
     
+    # Discriminate constant timestep from array of timesteps
     if np.iterable(steps):
-        # Custom array of sample times
         t_resamp = steps
     
     else:
-        # TODO: handle cases where is not float/int
         dt = steps
         t_resamp = np.arange(t[0], t[-1] + dt, dt)
     
-    if mode == 'linear':
-        x_resamp = np.interp(t_resamp, t, x)
-    
-    elif mode == 'spline':
-        bspline = scipy.interpolate.make_interp_spline(t, x, k=3)
-        x_resamp = bspline(t_resamp)
-    
+    # Resample each array in x
+    x_flat = x.reshape(-1, x.shape[-1])
+    x_resamp = []
+
+    for array in x_flat:
+        if mode == 'linear':
+            x_resamp.append(np.interp(t_resamp, t, array))
+        
+        elif mode == 'spline':
+            bspline = scipy.interpolate.make_interp_spline(t, array, k=3)
+            x_resamp.append(bspline(t_resamp))
+
+    # Shape resampled data to match original dimensions
+    new_shape = list(x.shape)
+    new_shape[-1] = t_resamp.size
+    x_resamp = np.reshape(x_resamp, new_shape)
+
     return t_resamp, x_resamp
 
 
