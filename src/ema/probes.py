@@ -38,7 +38,7 @@ def load_data(path_and_name, precision='single'):
     except Exception as e:
         print(e)
 
-    # Return transpose of data for easy unpacking
+    # Return data shaped with entries along the last axis
     return data.T
 
 
@@ -63,13 +63,13 @@ def load_probe(path_and_name, precision='single'):
 
     # Separate timesteps and data
     t = columns[0]
-    data = columns[1:].T
+    data = columns[1:]
 
     # Return tuple of timesteps and data
     return t, data
 
 
-def load_distributed_probe(path_and_name, last_index='probe', precision='single'):
+def load_distributed_probe(path_and_name, precision='single'):
     """Converts distributed and box probe results into a numpy array.
     
     For readability, each time step of a distributed probe is split into
@@ -79,30 +79,24 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
     a one-entry offset, there will always be a line with fewer than nine
     entries at the end of each time step, allowing the file to be parsed.
     
-    The dimensions of the returned data depend on the 'last_index' argument:
-        'probe':     (time, component, probe)
-        'component': (time, probe, component)
-         None:       (time, probes * components)
+    The dimensions of the returned data are [sample, component, time],
+    where "sample" refers to the individual probe points and "component"
+    refers to the x/y/z field components.
     
     Parameters
     ----------
     path_and_name : str | list
         Path to probe file with .dat suffix, or list of paths
-    last_index : str (optional)
-        Specifies structure of data array by last index
     precision : str (optional)
         Precision of simulation results ('single' | 'double')
 
     Returns
     -------
     tuple : np.ndarray, np.ndarray
-        A tuple of time steps and probe results in the form (t, data)
+        A tuple of time steps and probe measurements in the form (t, data)
     """
     
     # Handle exceptions
-    if last_index not in ['probe', 'component', None]:
-        raise ValueError(f'Argument "last_index" must be one of "probe", "component", or None; "{last_index}" provided.')
-        
     if not os.path.exists(path_and_name):
         raise Exception(f'File path specified by user does not exist. ({path_and_name})')
     
@@ -110,8 +104,9 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
     with open(path_and_name, 'r') as file:
         lines = file.readlines()
 
-    time, data, timestep = [], [], []
-
+    time, data, buffer = [], [], []
+    # TODO: automate precision check   
+    dtype = np.float32 if precision == 'single' else np.float64
     #total_lines = len(lines)
     
     for i, line in enumerate(lines):
@@ -120,52 +115,38 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
         
         line_split = line.split()
         
+        # Error for non-float values in file
         try:
-            # TODO: automate precision check
-            dtype = np.float32 if precision == 'single' else np.float64
             values = [dtype(val) for val in line_split]
         except:
             raise ValueError(f'Entry in line {i} cannot be cast to {dtype}: "{line_split}"')
 
-        if len(timestep) == 0:
+        # If new timestep, add to time array
+        if len(buffer) == 0:
             time.append(values[0])
-            timestep = timestep + values[1:]
+            buffer += values[1:]
         else:
-            timestep = timestep + values
+            buffer += values
 
+        # If end of timestep, reshape and append to data array; reset buffer
         if len(values) != 9:
-            if last_index == 'probe':
-                x = timestep[::3]
-                y = timestep[1::3]
-                z = timestep[2::3]
-                data.append([x, y, z])
-            
-            elif last_index == 'component':
-                data.append(np.reshape(timestep, (-1, 3)))
-                
-            elif last_index == None:
-                data.append(timestep)
-            
-            timestep = []
+            data.append(np.reshape(buffer, (-1, 3)).T)            
+            buffer = []
 
-    return np.array(time), np.array(data)
+    # Swap axes to have shape [sample, component, time]
+    data = np.swapaxes(np.array(data), 0, -1)
+    time = np.array(time)
+
+    return time, data
 
 
-def load_distributed_probes(paths_and_names, last_index='probe', precision='single'):
-    # TODO: use type checking to combine with load_distributed_probe
+def load_distributed_probes(paths_and_names, precision='single'):
     """Loads multiple distributed or box probe results into a numpy array.
-    
-    The dimensions of the returned data depend on the 'last_index' argument:
-        'probe':     (time, component, probe)
-        'component': (time, probe, component)
-         None:       (time, probes * components)
     
     Parameters
     ----------
     paths_and_names : array-like
         Paths to probe files (with .dat suffix)
-    last_index : str (optional)
-        Specifies structure of data array by last index
     precision : str (optional)
         Precision of simulation results ('single' | 'double')
 
@@ -174,18 +155,15 @@ def load_distributed_probes(paths_and_names, last_index='probe', precision='sing
     tuple : np.ndarray, np.ndarray
         A tuple of time steps and probe results in the form (t, data)
     """
-    
+    # TODO: use type checking to combine with load_distributed_probe
+
     data_sets = []
 
     for path_and_name in paths_and_names:
         t, d = load_distributed_probe(path_and_name, last_index, precision)
         data_sets.append(d)
 
-    if last_index == 'probe':
-        data = np.concatenate(data_sets, axis=2)
-        
-    elif last_index == 'component' or last_index == None:
-        data = np.concatenate(data_sets, axis=1)
+    data = np.concatenate(data_sets, axis=0)
 
     return t, data
 
@@ -210,10 +188,11 @@ def convert_distributed_probe(path_and_name, fname=None, precision='single'):
     None
     """
     
-    # Obtain flattened array
-    t, data = load_distributed_probe(path_and_name, last_index=None, precision=precision)
-    array = np.concatenate([t[:,np.newaxis], data], axis=1)
-    
+    # Obtain flattened array and combine with timesteps
+    t, data = load_distributed_probe(path_and_name, precision=precision)
+    flattened = np.concatenate(data, axis=0).T
+    combined = np.concatenate([t[:,np.newaxis], flattened], axis=1)
+
     # Save to file    
     if fname == None:
         # TODO: make hardcoded slice more flexible?
@@ -222,7 +201,7 @@ def convert_distributed_probe(path_and_name, fname=None, precision='single'):
         save_path_and_name = '\\'.join(path_and_name.split('\\')[-1] + [fname])
         
     fmt = '%.7E' if precision == 'single' else '%.15E'
-    np.savetxt(save_path_and_name, array, fmt=fmt)
+    np.savetxt(save_path_and_name, combined, fmt=fmt)
 
     
 ### Create aliases for box probes ###
