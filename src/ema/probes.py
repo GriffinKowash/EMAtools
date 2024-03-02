@@ -6,12 +6,20 @@ import glob
 import numpy as np
 
 
-def load_probe(path_and_name, precision='single'):
-    """Loads a generic probe file.
+def load_data(path_and_name, precision='single'):
+    """Loads a generic data file with a consistent number of entries per row.
 
-    Assumes that each time step is listed on a single line in the file.
-    For this reason, box or distributed probes must be loaded with their own functions.
-    The user is responsible for unpacking the results based on the expected column count.
+    Parameters
+    ----------
+    path_and_name : str
+        Path to data file with extension
+    precision : str (optional)
+        Precision of simulation results ('single' | 'double')
+
+    Returns
+    -------
+    np.ndarray
+        A 2D array of the file contents with the columns along the first axis.
     """
 
     # Handle exceptions
@@ -25,13 +33,40 @@ def load_probe(path_and_name, precision='single'):
     except ValueError as e:
         # ValueError occurs when number of columns in inconsistent (e.g. for box probe results)
         print(e)
-        print('Verify that the data file being loaded was not produced by a box, distributed, or animation probe.')
+        print('Inconsistent column numbers; verify that the data file being loaded was not produced by a box, distributed, or animation probe.')
 
     except Exception as e:
         print(e)
 
     # Return transpose of data for easy unpacking
     return data.T
+
+
+def load_probe(path_and_name, precision='single'):
+    """Loads a point probe file assuming that time steps are listed in the first column.
+
+    Parameters
+    ----------
+    path_and_name : str
+        Path to data file with extension
+    precision : str (optional)
+        Precision of simulation results ('single' | 'double')
+
+    Returns
+    -------
+    tuple
+        A tuple of the form (timesteps, data), where data contains all but the first column.
+    """
+
+    # Load data file
+    columns = load_data(path_and_name, precision)
+
+    # Separate timesteps and data
+    t = columns[0]
+    data = columns[1:].T
+
+    # Return tuple of timesteps and data
+    return t, data
 
 
 def load_distributed_probe(path_and_name, last_index='probe', precision='single'):
@@ -86,6 +121,7 @@ def load_distributed_probe(path_and_name, last_index='probe', precision='single'
         line_split = line.split()
         
         try:
+            # TODO: automate precision check
             dtype = np.float32 if precision == 'single' else np.float64
             values = [dtype(val) for val in line_split]
         except:
