@@ -235,6 +235,30 @@ def resample(t, x, steps, mode='linear'):
     return t_resamp, x_resamp
 
 
+def statistics(data, axis=None):
+    """Calculate minimum, mean, and maximum along a given axis.
+    Parameters
+    ----------
+    data : np.ndarray
+        data array(nd)
+    axis : int | None
+        Axis along which to calculate statistics
+
+    Returns
+    -------
+    tuple
+        Tuple of ndarrays of the form (min, mean, max)
+    """
+
+    dmin = np.min(data, axis=axis)
+    dmean = np.mean(data, axis=axis)
+    dmax = np.max(data, axis=axis)
+    #dstd = np.std(data, axis=axis)
+
+    return dmin, dmean, dmax
+
+
 ### Aliases ###
 pad_data_to_time = pad_to_time
 pad_array_to_length = pad
+stats = statistics
