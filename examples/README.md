@@ -9,13 +9,13 @@ The following example is based on a real customer use case that motivated much o
   The problem involves measuring the shielding effectiveness of an irregularly-shaped conductive enclosure with an EMI gasket, shown in Figure 1 below.
 
 <p align="center"><img src="images/shielding_in_box_1.png" /></p>
-<p style="text-align: center; font-weight: 700">Figure 1: Shielding enclosure problem setup</p>
+<p align="center">Figure 1: Shielding enclosure problem setup</p>
 <br>
 
 To characterize the shielding throughout the enclosure, two box field probes were added, as shown in Figure 2. The first is oriented horizontally along the longest wall of the enclosure, while the second fills the region protruding from the side.
 
 <p align="center"><img src="images/shielding_in_box_2.png" /></p>
-<p style="text-align: center; font-weight: 700">Figure 2: Electric field box probes filling enclosure volume</p>
+<p align="center">Figure 2: Electric field box probes filling enclosure volume</p>
 <br>
 
 EMAtools provides a straightforward workflow for analyzing the simulation results. First, the data from the two box probes is loaded, as well as the plane wave source to be used as the reference waveform:
@@ -47,5 +47,5 @@ se_min, se_mean, se_max = ema.stats(se, axis=0)
 Plotting these results against frequency in Figure 3, we can see how shielding effectiveness varies throughout the enclosure:
 
 <p align="center"><img src="images/shielding_in_box_3.png" /></p>
-<p style="text-align: center; font-weight: 700">Figure 3: Shielding statistics over all sample points</p>
+<p align="center">Figure 3: Shielding statistics over all sample points</p>
 <br>
