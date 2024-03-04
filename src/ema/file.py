@@ -282,7 +282,7 @@ class File:
         
         
     def replace(self, i, text):
-        """Inserts text at position or range i in self.lines.
+        """Replaces text at position or range i in self.lines.
 
         Parameters
         ----------
@@ -303,7 +303,7 @@ class File:
         # find start/stop indices
         if isinstance(i, (int, np.integer)):
             i0 = i
-            i1 = i0 + len(text) - 1
+            i1 = i0 #+ len(text) - 1
 
         elif np.iterable(i):
             # TODO: warning for len(i) > 2
