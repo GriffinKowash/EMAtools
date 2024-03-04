@@ -140,13 +140,13 @@ def load_distributed_probe(path_and_name, precision='single'):
     return time, data
 
 
-def load_distributed_probes(paths_and_names, precision='single'):
+def load_distributed_probes(*args, precision='single'):
     """Loads multiple distributed or box probe results into a numpy array.
     
     Parameters
     ----------
-    paths_and_names : array-like
-        Paths to probe files (with .dat suffix)
+    *args : str | list
+        Paths to probe files, entered as args or single list
     precision : str (optional)
         Precision of simulation results ('single' | 'double')
 
@@ -157,13 +157,20 @@ def load_distributed_probes(paths_and_names, precision='single'):
     """
     # TODO: use type checking to combine with load_distributed_probe
 
-    data_sets = []
+    # Handle paths provided as args vs list
+    if isinstance(args[0], list):
+        paths = args[0]
+    else:
+        paths = args
 
-    for path_and_name in paths_and_names:
-        t, d = load_distributed_probe(path_and_name, last_index, precision)
+    # Load distributed probe files
+    data_sets = []
+    for path in paths:
+        t, d = load_distributed_probe(path, precision)
         data_sets.append(d)
 
-    data = np.concatenate(data_sets, axis=0)
+    # Combine into single array
+    data = np.concatenate(data_sets)
 
     return t, data
 
