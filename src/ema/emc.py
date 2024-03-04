@@ -15,7 +15,7 @@ def shielding(xf, xf_ref, axis=-1):
     Parameters
     ----------
     xf : np.ndarray
-        Measurement data in frequencty domain (nd)
+        Measurement data in frequency domain (nd)
     xf_ref : np.ndarray
         Reference data in frequency domain (1d)
     axis : int (optional)
