@@ -6,7 +6,7 @@ import ema
 
 
 # User settings
-basepath = 'shielding_in_box/5'
+basepath = 'shielding_in_box/1'
 probe1_name = 'long_box_probe.dat'
 probe2_name = 'short_box_probe.dat'
 ref_name = 'Plane_Wave.dat'
