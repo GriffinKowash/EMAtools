@@ -20,6 +20,7 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 		- **[Trimming](#trimming)**
 		- **[Padding](#padding)**
 		- **[Resampling](#resampling)**
+		- **[Statistics](#statistics)**
 	- **[EMC module](#emc_module)**
 		- **[Shielding from frequency data](#shielding-from-frequency-data)**
 		- **[Shielding from timeseries](#shielding-from-timeseries)**
@@ -214,6 +215,17 @@ This tool can also be applied to simulations with magnetostatic scaling, where t
 
   The array `x` may have arbitrary dimensions as long as the last axis corresponds to time.
   
+  
+### Statistics
+
+The `statistics` function, also accessible via the alias `stats`, returns the minimum, mean, and maximum of an array. The `axis` argument can be used to specify the desired axis along which to apply the operation. For example, to obtain the statistics along axis 1 of an array `x`:
+
+```
+xmin, xmean, xmax = ema.stats(x, axis=1)
+```
+
+If an axis is not specified, statistics will be calculated for the array as a whole.
+
 
 ## EMC module
 
