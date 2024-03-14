@@ -8,7 +8,7 @@ here = pathlib.Path(__file__).parent.resolve()
 
 setup(
     name="EMAtools",  # Required
-    version="0.0.4",  # Required
+    version="0.1.0",  # Required
     description="An assortment of computational tools to make life easier at EMA.",  # Optional
     #long_description=long_description,  # Optional
     #long_description_content_type="text/markdown",  # Optional (see note above)
@@ -18,5 +18,10 @@ setup(
     package_dir={"": "src"},  # Optional
     packages=find_packages(where="src"),  # Required
     python_requires=">=3.7, <4",
-    install_requires=["numpy", "scipy"]  # Optional
+    install_requires=["numpy", "scipy"],  # Optional
+    project_urls={
+        'Usage guide': 'https://github.com/GriffinKowash/EMAtools/blob/main/README.md',
+        'GitHub': 'https://github.com/GriffinKowash/EMAtools',
+        'Changelog': 'https://github.com/GriffinKowash/EMAtools/blob/main/CHANGELOG.md'
+    }
 )
