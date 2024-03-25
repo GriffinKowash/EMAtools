@@ -251,7 +251,6 @@ def load_charge_results(path_and_name):
         lines = file.get(i0, i1)
         d = np.array([line.split()[1:] for line in lines], dtype=float)
         data.append(d)
-        print(len(d))
 
     # Restructure to shape (fields, nodes, timesteps)
     data = np.swapaxes(np.array(data), 0, -1)

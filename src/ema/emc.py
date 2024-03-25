@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from .signal import rfft
-from .probes import load_probe
+from .results import load_probe
 
 
 def shielding(xf, xf_ref, axis=-1):
