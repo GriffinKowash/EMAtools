@@ -246,7 +246,7 @@ def load_charge_results(path_and_name):
         t.append(float(file.get(i).split()[-1]))
 
         i0 = i + 4
-        i1 = file.find_next(i0, '', exact=True) - 1 
+        i1 = i0 + n - 1
     
         lines = file.get(i0, i1)
         d = np.array([line.split()[1:] for line in lines], dtype=float)
