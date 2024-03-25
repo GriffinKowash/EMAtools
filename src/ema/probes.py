@@ -5,6 +5,8 @@ import glob
 
 import numpy as np
 
+from .file import File
+
 
 def load_data(path_and_name, precision='single'):
     """Loads a generic data file with a consistent number of entries per row.
@@ -210,7 +212,54 @@ def convert_distributed_probe(path_and_name, fname=None, precision='single'):
     fmt = '%.7E' if precision == 'single' else '%.15E'
     np.savetxt(save_path_and_name, combined, fmt=fmt)
 
+
+def load_charge_results(path_and_name):
+    """Loads FEM results file (femCHARGE_results.dat, picCHARGE_results.dat, etc.)
+
+    Parameters
+    ----------
+    path_and_name : str
+        Path to probe file (with .dat suffix)
+
+    Returns
+    -------
+    tuple : np.ndarray, np.ndarray
+        A tuple of time steps and probe results in the form (t, data)
+    """
+
+    # Use file class for convenience
+    file = File(path_and_name)
+
+    # Find all time step flags
+    indices = file.find_all('Current time')
+
+    # Find number of mesh nodes
+    i0 = file.find('Node ')
+    i1 = file.find_next(i0, '', exact=True)
+    n = i1 - i0 - 1
+
+    # Unpack data
+    t, data = [], []
+    file.insert(len(file.lines), '') #helps with isolating time steps
+
+    for i in indices:
+        t.append(float(file.get(i).split()[-1]))
+
+        i0 = i + 4
+        i1 = file.find_next(i0, '', exact=True) - 1 
     
+        lines = file.get(i0, i1)
+        d = np.array([line.split()[1:] for line in lines], dtype=float)
+        data.append(d)
+        print(len(d))
+
+    # Restructure to shape (fields, nodes, timesteps)
+    data = np.swapaxes(np.array(data), 0, -1)
+    t = np.array(t)
+
+    return t, data
+
+
 ### Create aliases for box probes ###
 load_box_probe = load_distributed_probe
 load_box_probes = load_distributed_probes
