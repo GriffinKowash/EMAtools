@@ -213,18 +213,20 @@ def convert_distributed_probe(path_and_name, fname=None, precision='single'):
     np.savetxt(save_path_and_name, combined, fmt=fmt)
 
 
-def load_charge_results(path_and_name):
+def load_charge_results(path_and_name, fields=False):
     """Loads FEM results file (femCHARGE_results.dat, picCHARGE_results.dat, etc.)
 
     Parameters
     ----------
     path_and_name : str
         Path to probe file (with .dat suffix)
+    fields : bool
+        If True, returns dict of field names and indices
 
     Returns
     -------
-    tuple : np.ndarray, np.ndarray
-        A tuple of time steps and probe results in the form (t, data)
+    tuple
+        A tuple of time steps and probe results, and optionally a dict of column names
     """
 
     # Use file class for convenience
@@ -255,6 +257,13 @@ def load_charge_results(path_and_name):
     # Restructure to shape (fields, nodes, timesteps)
     data = np.swapaxes(np.array(data), 0, -1)
     t = np.array(t)
+
+    # Optionally return dict of column name/index mappings
+    if fields:
+        names = file.get(file.find('Node ')).split()[1:] #omit "Node" label
+        field_dict = {name:index for index, name in enumerate(names)}
+
+        return t, data, field_dict
 
     return t, data
 
