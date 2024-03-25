@@ -12,9 +12,10 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 
 - **[Installation](#installation)**
 - **[Usage](#usage)**
-	- **[Probes module](#probes-module)**
+	- **[Results module](#results-module)**
 		- **[Loading point probe results](#loading-point-probe-results)**
 		- **[Loading box/distributed probe results](#loading-boxdistributed-probe-results)**
+		- **[Loading Charge results](#loading-charge-results)**
 	- **[Signal module](#signal-module)**
 		- **[FFT](#fft)**
 		- **[Trimming](#trimming)**
@@ -67,7 +68,7 @@ import ema
 
 When in doubt, refer to in-code documention for the feature in question at https://github.com/GriffinKowash/EMAtools/tree/main/src/ema. Please notify Griffin at griffin.kowash@ema3d.com if any conflicts between documentation and true behavior are observed.
 
-## Probes module
+## Results module
 
 ### Loading point probe results
 
@@ -113,6 +114,17 @@ The physical location of each sample point can be determined by reference to the
   
   Precision can be specified in the same way as for the `load_probe` function.
  
+ 
+### Loading Charge results
+
+Any Charge Plus output file ending in `_results.dat` can be loaded using the `load_charge_results` function. For example:
+
+```
+t, data = load_charge_results('path/to/picCHARGE_results.dat')
+```
+ 
+The function returns a tuple of the time steps and field data, with the field data arranged in the shape [field, node, time].
+
 
 
 ## Signal module
