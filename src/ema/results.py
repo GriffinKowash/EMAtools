@@ -260,7 +260,7 @@ def load_charge_results(path_and_name, fields=False):
 
     # Optionally return dict of column name/index mappings
     if fields:
-        names = file.get(file.find('Node ')).split()[1:] #omit "Node" label
+        names = file.get(file.find('Node ')).split()
         field_dict = {name:index for index, name in enumerate(names)}
 
         return t, data, field_dict
