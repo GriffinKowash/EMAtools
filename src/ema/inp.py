@@ -78,7 +78,7 @@ class Inp(File):
 
         # Default name if not provided
         if name is None:
-            name = '{}_{}_{}_{}'.format(probe_type, segment, conductor, index)
+            name = '{}_{}_{}_{}'.format(probe_type, conductor, segment, index)
 
         # Pull start, end, and step from domain settings if not provided
         if start is None:
