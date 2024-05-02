@@ -112,7 +112,7 @@ class File:
         return i + 1
         
         
-    def find_all(self, text, start=0, end=None, exact=False, case=True, n_max=None):
+    def find_all(self, text, start=0, end=None, exact=False, case=True, n_max=None, verbose=True):
         """Finds indices of all occurrences of a text string in self.lines.
 
         Parameters
@@ -129,6 +129,8 @@ class File:
             Whether to require case matching.
         n_max : int (optional)
             Interrupts search after n_max occurrences have been found.
+        verbose : bool (optional)
+            Prints a message when the specified string is not found.
             
         Returns
         -------
@@ -161,7 +163,7 @@ class File:
                 if n_found == n_max:
                     break
             
-        if n_found == 0:
+        if n_found == 0 and verbose:
             print(f'Text string "{text}" not found in file.')
 
         return np.array(indices)
