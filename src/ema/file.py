@@ -430,6 +430,8 @@ class File:
                     
         # Print lines
         lines = self.getlines(l0, l1)
+        if l1 is None:
+            lines = [lines]
 
         for i, line in enumerate(lines):
             if np.iterable(l0):
