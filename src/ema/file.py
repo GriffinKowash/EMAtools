@@ -400,7 +400,7 @@ class File:
         return self.get(i0, i1)
 
     
-    def printlines(self, l0, l1=None):
+    def printlines(self, l0, l1=None, numbered=True):
         """
         Prints out lines l0 to l1 (1-based indexing) formatted with line numbers.
         
@@ -439,10 +439,13 @@ class File:
             else:
                 n = l0 + i
             
-            print(n, '\t|', line)
+            if numbered:
+                print(n, '\t|', line)
+            else:
+                print(line)
 
 
-    def print(self, i0, i1=None):
+    def print(self, i0, i1=None, numbered=True):
         """
         Prints out indices i0 to i1 (0-based indexing); wrapper for File.printlines.
 
@@ -458,7 +461,7 @@ class File:
         None
         """
 
-        self.printlines(self.itol(i0), self.itol(i1))
+        self.printlines(self.itol(i0), self.itol(i1), numbered)
             
                 
     def head(self, n=10):
