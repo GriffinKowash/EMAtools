@@ -152,8 +152,20 @@ class Inp(File):
 
 
     def print_probes(self, numbered=True):
+        """Prints lines containing probe definitions to the console.
+
+        Parameters
+        ----------
+        numbered : bool (optional)
+            Whether to print with line numbers and indents (set False if planning to copy-paste output)
+
+        Returns
+        -------
+        None
+        """
+
         i0 = self.find('OUTPUT / PROBES') - 1
         i1 = self.find('END THE INPUT FILE')
 
         if i0 is not None and i1 is not None:
-            inp.print(i0, i1, numbered)
+            self.print(i0, i1, numbered)
