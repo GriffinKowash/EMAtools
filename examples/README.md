@@ -1,6 +1,6 @@
 # Examples
 
-This document provides context and discussion for the example scripts located in the "examples" directory of EMAtools. For greatest clarity, reference the appropriate scripts while reading, as the discussions skip some details for the sake of brevity. To access any additional files needed to execute the example scripts, see K:/Griffin/EMAtools/examples.
+This document provides context and discussion for the example scripts located in the [**Examples**](https://github.com/GriffinKowash/EMAtools/tree/main/examples) directory of EMAtools. For greatest clarity, reference the appropriate scripts while reading, as the discussions skip some details for the sake of brevity. To access any additional files needed to execute the example scripts, see K:/Griffin/EMAtools/examples.
 
 
 ## Table of Contents
@@ -108,13 +108,13 @@ from ema import Emin
 emin = Emin(path)
 ```
 
-Next, create a list of the lines to be inserted:
+Next, create a list of the lines to be inserted, which in this case is the source string followed by the corresponding comment:
 
 ```
 new_lines = [sources[i], comments[i]]
 ```
 
-Find the index of the plane wave definition header and move ahead by five lines, where the orientation and polarization angles are specified:
+Find the index of the "!PLANE WAVE SOURCE" header and move ahead by five lines to where the orientation and polarization angles are specified:
 
 ```
 index = emin.find('!PLANE WAVE SOURCE') + 5
