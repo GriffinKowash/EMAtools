@@ -149,3 +149,11 @@ class Inp(File):
         """
 
         self.probe('current', segment, conductor, index, **kwargs)
+
+
+    def print_probes(self, numbered=True):
+        i0 = self.find('OUTPUT / PROBES') - 1
+        i1 = self.find('END THE INPUT FILE')
+
+        if i0 is not None and i1 is not None:
+            inp.print(i0, i1, numbered)
