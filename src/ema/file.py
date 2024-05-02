@@ -112,7 +112,7 @@ class File:
         return i + 1
         
         
-    def find_all(self, text, start=0, exact=False, case=True, n_max=None):
+    def find_all(self, text, start=0, end=None, exact=False, case=True, n_max=None):
         """Finds indices of all occurrences of a text string in self.lines.
 
         Parameters
@@ -121,6 +121,8 @@ class File:
             Text string for which to search file.
         start : int (optional)
             Index at which to begin search; defaults to start of file.
+        end : int (optional)
+            Index at which to stop search; defaults to end of file.
         exact : bool (optional)
             Whether line must exactly match or simply contain text string.
         case : bool (optional)
@@ -137,12 +139,18 @@ class File:
         # Make text lowercase if not case sensitive
         if not case:
             text = text.lower()
+
+        # Create subset of self.lines bounded by start and end arguments
+        if end is not None:
+            lines = self.lines[start:end]
+        else:
+            lines = self.lines[start:]
         
         # Search for occurrences of text up to n_max
         n_found = 0
         indices = []
         
-        for i, line in enumerate(self.lines[start:]):
+        for i, line in enumerate(lines):
             if not case:
                 line = line.lower()
                 
