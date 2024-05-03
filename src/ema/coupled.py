@@ -57,5 +57,11 @@ class CoupledSim:
         -------
         None
         """
-        
+
 		self.inp.print_probes()
+
+
+	def save(self):
+		#TODO: add docstring and option for custom path
+		self.emin.save()
+		self.inp.save()
