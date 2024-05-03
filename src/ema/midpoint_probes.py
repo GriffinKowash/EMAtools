@@ -1,3 +1,5 @@
+import numpy as np
+
 def create_graph(inp, conductor):
     """Takes in inp file and conductor name and returns a segment-connections mapping."""
     
@@ -213,8 +215,8 @@ def order_limb(limb, graph, verbose=False):
     return limb_ordered
 
 
-def find_segment_length(segment, emin):
-    """Finds the number of mesh nodes in a given segment."""
+def find_cells_in_segment(segment, emin):
+    """Finds the number of cells in a given segment."""
     segment = segment.split('_')[0] #strip topology information
     
     for i in emin.find_all('!MHARNESS SEGMENT'):
@@ -235,25 +237,90 @@ def find_array_midpoint(array):
             return i
     
     return None
-    
+
+
+def find_segment_endpoints(segment, emin):
+    """Finds start/end meshes indices and directions of an MHARNESS segment."""
+
+    # Read emin and return start/end nodes
+    i0 = emin.find(segment, exact=True, separator='')
+    i1 = emin.find_next(i0, '', exact=True)
+    x0, y0, z0, d0, _ = emin.get(i0 + 1).split()
+    x1, y1, z1, d1, _ = emin.get(i1 - 1).split()
+    node0 = np.array([x0, y0, z0], dtype=int)
+    node1 = np.array([x1, y1, z1], dtype=int)
+
+    return node0, d0, node1, d1
+
+
+def segment_connects_at_start_node(segment, neighbor, emin):
+    """Determines whether the connection between a segment and a neighbor occurs at the first mesh index.
+    Required to ensure that the segment midpoint is calculated correctly.
+
+    Note that this function is complicated by the fact that the direction of the final cell in an MHARNESS
+    segment is ambiguous, as it is not specified whether it is positive or negative. As a result, a
+    temporary workaround is in place that should handle the majority of cases, and even for the exceptions,
+    the effect will usually be insignificant.
+    """
+
+    # Strip topology information if needed
+    segment = segment.split('_')[0]
+    neighbor = neighbor.split('_')[0]
+
+    # Get first and last mesh nodes of segment and neighbor
+    s0, sd0, s1, sd1 = find_segment_endpoints(segment, emin)
+    n0, nd0, n1, nd1 = find_segment_endpoints(neighbor, emin)
+
+    # Check for exact coincidence of start-start pairing
+    if np.all(s0 == n0):
+        return True
+
+    # Check for proximity of endpoints
+    #direction = {'X': np.array([1,0,0]), 'Y': np.array([0,1,0]), 'Z': np.array([0,0,1])}
+    dist_s0_n0 = np.sqrt(np.sum((s0 - n0)**2))
+    dist_s0_n1 = np.sqrt(np.sum((s0 - n1)**2))
+    dist_s1_n0 = np.sqrt(np.sum((s1 - n0)**2))
+    dist_s1_n1 = np.sqrt(np.sum((s1 - n1)**2))
+    max_dist = np.sqrt(3)
+
+    if dist_s0_n0 <= max_dist or dist_s0_n1 <= max_dist:
+        return True
+    elif dist_s1_n0 <= max_dist or dist_s1_n1 <= max_dist:
+        return False
+    else:
+        print(f'Could not find connection between segments {segment} and {neighbor}.')
+        return None
+
 
 def find_limb_midpoint(limb, emin):
     """References ordered limb against emin file and finds segment and mesh index of midpoint."""
     
     # Find number of mesh cells in each segment
-    lengths = []
+    cell_counts = []
     for segment in limb:
-        l = find_segment_length(segment, emin)
-        lengths.append(l)
+        l = find_cells_in_segment(segment, emin)
+        cell_counts.append(l)
     
     # Find index of segment containing midpoint
-    i_mid = find_array_midpoint(lengths)
+    i_mid = find_array_midpoint(cell_counts)
     segment = limb[i_mid]
-    
+
     # Find mesh index of midpoint on segment
-    n_before = sum(lengths[:i_mid])
-    n_mid = sum(lengths) // 2
-    index = n_mid - n_before + 1  #mesh nodes are 1-indexed
+    n_before = sum(cell_counts[:i_mid])
+    n_mid = sum(cell_counts) // 2
+    
+    if len(limb) > 1:
+        segment_before = limb[i_mid - 1]
+        if segment_connects_at_start_node(segment, segment_before, emin):
+            index = n_mid - n_before + 1  #mesh nodes are 1-indexed
+            #print(f'Segment {segment} connects to {segment_before} at start point--normal behavior.')
+        else:
+            n_after = sum(cell_counts[:i_mid + 1])
+            index = n_after - n_mid
+            #print(f'Segment {segment} connects to {segment_before} at end point--reverse behavior.')
+
+    else:
+        index = n_mid - n_before + 1  #mesh nodes are 1-indexed
     
     return segment, index
     
