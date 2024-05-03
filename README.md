@@ -42,6 +42,9 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 	- **[Inp class](#inp-class)**
 		- **[Instantiating an Inp object](#instantiating-an-inp-object)**
 		- **[Probing voltage/current](#probing-voltagecurrent)**
+	- **[CoupledSim class](#coupledsim-class)**
+		- **[Instantiating a CoupledSim object](#instantiating-a-coupledsim-object)**
+		- **[Probing midpoint currents](#probing-midpoint-currents)**
 
 
 # Installation
@@ -686,3 +689,59 @@ inp.probe_current("SEG", "C1", 12, name='current_probe', start=1e-9, end=1e-7, t
 ```
 
 Note that `Inp.probe_voltage` and `Inp.probe_current` do not verify whether the segment and conductor names provided by the user actually exist in the harness.
+
+
+## CoupledSim class
+
+The CoupledSim class provides functionality specific to coupled EMA3D/MHARNESS simulations.
+
+### Instantiating a CoupledSim object
+
+To instantiate a `CoupledSim` object, first import the `Emin`, `Inp`, and `CoupledSim` classes:
+
+```
+from ema import Emin, Inp, CoupledSim
+```
+
+Next, load the simulation input files as `Emin` and `Inp` objects, as described in the previous sections:
+
+```
+emin = Emin('path/to/file.emin')
+inp = Inp('path/to/file.inp')
+```
+
+Finally, pass the `Emin` and `Inp` objects as arguments to the `CoupledSim` constructor:
+```
+coupled = CoupledSim(emin, inp)
+```
+
+
+### Probing midpoint currents
+
+When working with large harnesses, it can be time consuming to manually place current probes on every conductor in each region of interest. The `probe_midpoint_currents` method automates this process by adding probe definitions to the input file.
+
+ Probes are placed at the midpoint of each unbranching chain of MHARNESS segments comprising a given conductor. This ensures that all unique currents in the conductor are captured without requiring a probe to be placed on every segment.
+
+ After creating a `CoupledSim` object as described above, simply call the `probe_midpoint_currents` method:
+
+```
+coupled.probe_midpoint_currents()
+```
+
+By default, this method places current probes on every conductor in the harness. To probe a single conductor, pass the conductor name as a positional argument. For example:
+
+```
+coupled.probe_midpoint_currents('Conductor_5')
+```
+
+To probe several conductors, provide a list of names:
+
+```
+coupled.probe_midpoint_currents(['Conductor_1', 'Conductor_5'])
+```
+
+If additional information from the algorithm is desired for debugging purposes, set the `verbose` keyword argument to `True`:
+
+```
+coupled.probe_midpoint_currents('Conductor_1', verbose=True)
+```
