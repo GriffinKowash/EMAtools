@@ -1,5 +1,6 @@
 #from .midpoint_probes import create_graph, find_conductors_and_segments, parse_segment, find_limb_containing, add_limb, create_limbs, find_limb_endpoints, order_limb, find_segment_length, find_array_midpoint, find_limb_midpoint, probe_conductor_currents
 from .midpoint_probes import probe_conductor_currents, find_conductors_and_segments
+from .endpoint_probes import find_terminations, find_segment_endpoint_index
 
 
 class CoupledSim:
@@ -17,7 +18,7 @@ class CoupledSim:
 		Parameters
         ----------
         conductors : str | list (optional)
-        	Name or names of conductors to probe. If None, probe all conductors.
+        	Name or names of conductors to probe. If None, probes all conductors.
 		verbose : bool (optional)
 			Whether to print status messages to the console. Mainly for debugging.
 
@@ -43,6 +44,34 @@ class CoupledSim:
 		        print(exc)
 		        
 		print('\nFinished probing conductors.')
+
+
+	def probe_termination_voltages(self, conductors=None, threshold=0):
+		"""Place voltage pin probes at the terminations of a set of conductors.
+
+		Parameters
+        ----------
+        conductors : str | list (optional)
+        	Name or names of conductors to probe. If None, probes all conductors.
+        threshold : float (optional)
+        	Minimum termination resistance to probe. Useful for probing only Mohm terminations in Voc simulations.
+
+        Returns
+        -------
+        None
+		"""
+
+		# Find terminations defined in inp file, optionally filtering by conductor name
+		terminations = find_terminations(self.inp, conductors)
+
+		# Loop over terminations and place voltage probes
+		for segment, conductor, endpoint, resistance in terminations:
+			if float(resistance) < threshold:
+				continue
+
+			segment_root = segment.split('_')[0] #remove topology information if present
+			index = find_segment_endpoint_index(segment_root, endpoint, self.emin)
+			self.inp.probe_voltage(segment_root, conductor, index)
 
 
 	def print_probes(self):
