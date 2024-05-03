@@ -11,6 +11,7 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 # Table of Contents
 
 - **[Installation](#installation)**
+- **[Technical notes](#technical-notes)**
 - **[Usage](#usage)**
 	- **[Results module](#results-module)**
 		- **[Loading point probe results](#loading-point-probe-results)**
@@ -66,6 +67,15 @@ Import EMAtools in a Python script or shell:
 ```
 import ema
 ```
+
+
+# Technical notes
+
+## Array formatting
+
+By default, EMAtools formats the axes of multidimensional arrays in **order of decreasing abstraction**. Concretely, this means that time or frequency
+
+
 
 # Usage
 
@@ -718,9 +728,15 @@ coupled = CoupledSim(emin, inp)
 
 ### Probing midpoint currents
 
-When working with large harnesses, it can be time consuming to manually place current probes on every conductor in each region of interest. The `probe_midpoint_currents` method automates this process by adding probe definitions to the input file.
+Manually placing current probes on a harness can be extremely time intensive when working with large models. The `probe_midpoint_currents` method automates this procedure by detecting points of interest in the harness and adding probe definitions to the input file.
 
  Probes are placed at the midpoint of each unbranching chain of MHARNESS segments comprising a given conductor. This ensures that all unique currents in the conductor are captured without requiring a probe to be placed on every segment.
+
+ The image below shows the probe placement generated for an example conductor. Since the conductor is not routed into `SEG1` (top right), segments `SEG` and `SEG2` are treated as a single, continuous current path. The `probe_midpoint_currents` method therefore places a single probe at their combined midpoint rather than placing one on `SEG` and another on `SEG2`.
+
+ <p align="center"><img src="resources/readme_midpoint_probes.png" /></p>
+ <p align="center">Figure 1: Placement of current probes by CoupledSim.probe_midpoint_currents</p>
+ <br>
 
  After creating a `CoupledSim` object as described above, simply call the `probe_midpoint_currents` method:
 
@@ -728,16 +744,16 @@ When working with large harnesses, it can be time consuming to manually place cu
 coupled.probe_midpoint_currents()
 ```
 
-By default, this method places current probes on every conductor in the harness. To probe a single conductor, pass the conductor name as a positional argument. For example:
+By default, this method places current probes on every conductor in the harness. To probe a single conductor, pass the conductor name as a positional argument:
 
 ```
-coupled.probe_midpoint_currents('Conductor_5')
+coupled.probe_midpoint_currents('Conductor_1')
 ```
 
 To probe several conductors, provide a list of names:
 
 ```
-coupled.probe_midpoint_currents(['Conductor_1', 'Conductor_5'])
+coupled.probe_midpoint_currents(['Conductor_1', 'Conductor_2'])
 ```
 
 If additional information from the algorithm is desired for debugging purposes, set the `verbose` keyword argument to `True`:
