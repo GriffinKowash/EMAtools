@@ -112,7 +112,7 @@ class File:
         return i + 1
         
         
-    def find_all(self, text, start=0, end=None, exact=False, case=True, n_max=None, verbose=True):
+    def find_all(self, text, start=0, end=None, exact=False, separator=None, case=True, n_max=None, verbose=True):
         """Finds indices of all occurrences of a text string in self.lines.
 
         Parameters
@@ -125,6 +125,8 @@ class File:
             Index at which to stop search; defaults to end of file.
         exact : bool (optional)
             Whether line must exactly match or simply contain text string.
+        separator : str | None (optional)
+            Used with "exact" to split each line by the separator before comparison.
         case : bool (optional)
             Whether to require case matching.
         n_max : int (optional)
@@ -153,16 +155,33 @@ class File:
         indices = []
         
         for i, line in enumerate(lines):
+            match = False
+
             if not case:
                 line = line.lower()
                 
             if (exact and text == line) or (not exact and text in line):
+                match = True
+
+            elif exact and separator is not None:
+                if separator == '':
+                    if text in line.split():
+                        match = True
+                else:
+                    try:
+                        if text in line.split(separator):
+                            match = True
+                    except ValueError as exc:
+                        print(f'Separator not supported: {separator}')
+                        print(exc)
+
+            if match:
                 indices.append(start + i)
                 n_found += 1
                 
                 if n_found == n_max:
                     break
-            
+
         if n_found == 0 and verbose:
             print(f'Text string "{text}" not found in file.')
 
