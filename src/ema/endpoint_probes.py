@@ -37,7 +37,7 @@ def find_segment_endpoint_index(segment, endpoint, emin):
         return index
         
     elif int(endpoint) == 2:
-        i0 = emin.find(segment_root, exact=True, separator='') + 1
+        i0 = emin.find(segment_root, exact=True, separator='')
         i1 = emin.find_next(i0, '', exact=True)
         index = i1 - i0
         return index
