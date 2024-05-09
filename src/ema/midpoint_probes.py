@@ -239,60 +239,79 @@ def find_array_midpoint(array):
     return None
 
 
+def find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1, mode='start'):
+    """Identifies terminating node of cell (x0, y0, z0, dir0) based on neighbor."""
+
+    # Find nodes in cells
+    direction = {'X': np.array([1,0,0]), 'Y': np.array([0,1,0]), 'Z': np.array([0,0,1])}
+    n00 = np.array((x0, y0, z0), dtype=np.int32)
+    n01 = n00 + direction[dir0]
+    n10 = np.array((x1, y1, z1), dtype=np.int32)
+    n11 = n10 + direction[dir1]
+
+    # Identify terminating node as node not shared with second cell
+    term_node = None
+    for test_node, other_node in zip((n00, n01), (n01, n00)):
+        if np.all(test_node == n10) or np.all(test_node == n11):
+            term_node = other_node
+            break
+
+    if term_node is None:
+        print('!!! Could not find terminating node.')
+
+    return term_node
+
+
 def find_segment_endpoints(segment, emin):
-    """Finds start/end meshes indices and directions of an MHARNESS segment."""
+    """Finds start/end meshes indices of an MHARNESS segment."""
 
-    # Read emin and return start/end nodes
-    i0 = emin.find(segment, exact=True, separator='')
-    i1 = emin.find_next(i0, '', exact=True)
-    x0, y0, z0, d0, _ = emin.get(i0 + 1).split()
-    x1, y1, z1, d1, _ = emin.get(i1 - 1).split()
-    node0 = np.array([x0, y0, z0], dtype=int)
-    node1 = np.array([x1, y1, z1], dtype=int)
+    # Get first and second cells in segment and find start node
+    i0 = emin.find(segment, exact=True, separator='') + 1
+    i1 = i0 + 1
+    x0, y0, z0, dir0, _ = emin.get(i0).split()
+    x1, y1, z1, dir1, _ = emin.get(i1).split()
 
-    return node0, d0, node1, d1
+    start_node = find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1)
+
+    # Repeat to find end node
+    i0 = emin.find_next(i0, '', exact=True) - 1
+    i1 = i0 - 1
+    x0, y0, z0, dir0, _ = emin.get(i0).split()
+    x1, y1, z1, dir1, _ = emin.get(i1).split()
+
+    end_node = find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1)
+
+    return start_node, end_node
 
 
 def segment_connects_at_start_node(segment, neighbor, emin):
     """Determines whether the connection between a segment and a neighbor occurs at the first mesh index.
-    Required to ensure that the segment midpoint is calculated correctly.
-
-    Note that this function is complicated by the fact that the direction of the final cell in an MHARNESS
-    segment is ambiguous, as it is not specified whether it is positive or negative. As a result, a
-    temporary workaround is in place that should handle the majority of cases, and even for the exceptions,
-    the effect will usually be insignificant.
-    """
+    Required to ensure that the segment midpoint is calculated correctly."""
 
     # Strip topology information if needed
     segment = segment.split('_')[0]
     neighbor = neighbor.split('_')[0]
 
     # Get first and last mesh nodes of segment and neighbor
-    s0, sd0, s1, sd1 = find_segment_endpoints(segment, emin)
-    n0, nd0, n1, nd1 = find_segment_endpoints(neighbor, emin)
+    segment_start, segment_end = find_segment_endpoints(segment, emin)
+    neighbor_start, neighbor_end = find_segment_endpoints(neighbor, emin)
 
-    # Check for exact coincidence of start-start pairing
-    if np.all(s0 == n0):
+    print(f'\nChecking for connection from {neighbor} to start node of {segment}')
+    #print('Segment start/end:', segment_start, segment_end)
+    #print('Neighbor start/end:', neighbor_start, neighbor_end)
+
+    if np.all(segment_start == neighbor_start) or np.all(segment_start == neighbor_end):
         return True
 
-    # Check for proximity of endpoints
-    #direction = {'X': np.array([1,0,0]), 'Y': np.array([0,1,0]), 'Z': np.array([0,0,1])}
-    dist_s0_n0 = np.sqrt(np.sum((s0 - n0)**2))
-    dist_s0_n1 = np.sqrt(np.sum((s0 - n1)**2))
-    dist_s1_n0 = np.sqrt(np.sum((s1 - n0)**2))
-    dist_s1_n1 = np.sqrt(np.sum((s1 - n1)**2))
-    max_dist = np.sqrt(3)
-
-    if dist_s0_n0 <= max_dist or dist_s0_n1 <= max_dist:
-        return True
-    elif dist_s1_n0 <= max_dist or dist_s1_n1 <= max_dist:
+    elif np.all(segment_end == neighbor_start) or np.all(segment_end == neighbor_end):
         return False
+
     else:
-        print(f'Could not find connection between segments {segment} and {neighbor}.')
+        print('!!! Did not find incidence with start or end node.')
         return None
 
 
-def find_limb_midpoint(limb, emin):
+def find_limb_midpoint(limb, emin, verbose=False):
     """References ordered limb against emin file and finds segment and mesh index of midpoint."""
     
     # Find number of mesh cells in each segment
@@ -309,18 +328,19 @@ def find_limb_midpoint(limb, emin):
     n_before = sum(cell_counts[:i_mid])
     n_mid = sum(cell_counts) // 2
     
-    if len(limb) > 1:
+    if i_mid >= 1:
         segment_before = limb[i_mid - 1]
         if segment_connects_at_start_node(segment, segment_before, emin):
-            index = n_mid - n_before + 1  #mesh nodes are 1-indexed
-            #print(f'Segment {segment} connects to {segment_before} at start point--normal behavior.')
+            index = n_mid - n_before + 1
+            if verbose:
+                print(f'Segment {segment} connects to {segment_before} at start point--normal behavior.')
         else:
             n_after = sum(cell_counts[:i_mid + 1])
             index = n_after - n_mid
-            #print(f'Segment {segment} connects to {segment_before} at end point--reverse behavior.')
-
+            if verbose:
+                print(f'Segment {segment} connects to {segment_before} at end point--reverse behavior.')
     else:
-        index = n_mid - n_before + 1  #mesh nodes are 1-indexed
+        index = n_mid - n_before + 1
     
     return segment, index
     
@@ -338,7 +358,7 @@ def probe_conductor_currents(conductor, inp, emin, verbose=False):
     limbs = [order_limb(limb, graph, verbose) for limb in limbs]
 
     # Find midpoint mesh node for each limb
-    midpoints = [find_limb_midpoint(limb, emin) for limb in limbs]
+    midpoints = [find_limb_midpoint(limb, emin, verbose) for limb in limbs]
     
     # Place probes at limb midpoints
     if verbose:
