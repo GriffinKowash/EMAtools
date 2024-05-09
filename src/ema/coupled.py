@@ -66,7 +66,7 @@ class CoupledSim:
 
 		# Loop over terminations and place voltage probes
 		for segment, conductor, endpoint, resistance in terminations:
-			if float(resistance) < threshold:
+			if float(resistance) <= threshold:
 				continue
 
 			segment_root = segment.split('_')[0] #remove topology information if present
