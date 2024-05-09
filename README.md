@@ -405,6 +405,16 @@ The `File.head` method is a wrapper for `File.printlines` that displays the firs
 5 	| * <CachedId>28120648-340b-4e3a-8138-63381f05d812</CachedId>
 ```
 
+By default, the result is printed with line numbers and indentation for readability. To suppress this behavior, set the optional argument `numbered` to `False` in any of the print methods described above. For example, executing `file.head(5, numbered=False)` outputs the following:
+
+```
+* File Name: test.emin
+* Created  : Tue, 05 Sep 08:39:11 GMT-06:00  
+* DO NOT MODIFY >>>       
+* <Cached>test_.sav</Cached>
+* <CachedId>28120648-340b-4e3a-8138-63381f05d812</CachedId>
+```
+
 
 ### Searching
 
@@ -430,6 +440,8 @@ Several optional keyword arguments can be set to refine the search parameters.
 - `start` specifies an index at which to begin searching, with all previous lines being omitted from the search. (Default 0)
 
 - `exact` is a boolean that determines whether a line must exactly match or simply contain the search string. (Default False)
+
+- `separator` is an optional string that modifies the behavior of `exact` mode; see explanation below.
   
 - `case` is a boolean that determines whether the comparison against the search string should be case-sensitive. (Default True)
   
@@ -441,7 +453,13 @@ As an example, the following command will locate case-insensitive exact matches 
   indices = file.find_all('* geometry: line', start=150, exact=True, case=False, n_max=5)
   ```
   
-`File.find` is a wrapper method for `File.find_all` that finds a single match to the search string rather than returning a list of all matches. To find the first instance of "!NEW PROBE FILE NAME":
+The `separator` argument is only used with `exact=True` and allows a non-endline separator to be specified when searching for an exact match. For a practical use case, consider that segment names in MHARNESS files have topology information encoded using underscores—for example, "SEG5___S0___C0" indicates a conductor nested within a shield on segment SEG5. If the user wishes to find occurrences of SEG5 that do *not* contain topology information, executing `file.find('SEG5')` will yield false positives, since 'SEG5' is a partial match for 'SEG5___S0___C0'. On the other hand, `file.find('SEG5', exact=True)` will likely yield no results, since the `exact` keyword searches for exact matches with a full line.
+
+ If an empty string is provided as a separator (1file.find('SEG5', exact=True, separator='')`), then EMAtools will split each line by whitespace and search for an exact match within the resulting array of strings. This will produce the desired result for this example, as only exact matches to `SEG5` surrounded by whitespace will be returned.
+ 
+ The `separator` argument can also be a list or tuple of separators; for example, providing `separator=['(', ')']` will split each line by open and closed parentheses. Any standard regular expression may also be provided.
+  
+ `File.find` is a wrapper method for `File.find_all` that finds a single match to the search string rather than returning a list of all matches. To find the first instance of "!NEW PROBE FILE NAME":
 
 ```
 file.find('!NEW PROBE FILE NAME')
