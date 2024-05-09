@@ -74,7 +74,7 @@ import ema
 
 ## Array formatting
 
-By default, EMAtools formats the axes of multidimensional arrays in **order of decreasing abstraction**. Concretely, this means that time or frequency
+By default, EMAtools formats arrays with two or more dimensions with **time or frequency**
 
 
 
@@ -453,9 +453,9 @@ As an example, the following command will locate case-insensitive exact matches 
   indices = file.find_all('* geometry: line', start=150, exact=True, case=False, n_max=5)
   ```
   
-The `separator` argument is only used with `exact=True` and allows a non-endline separator to be specified when searching for an exact match. For a practical use case, consider that segment names in MHARNESS files have topology information encoded using underscores—for example, "SEG5___S0___C0" indicates a conductor nested within a shield on segment SEG5. If the user wishes to find occurrences of SEG5 that do *not* contain topology information, executing `file.find('SEG5')` will yield false positives, since 'SEG5' is a partial match for 'SEG5___S0___C0'. On the other hand, `file.find('SEG5', exact=True)` will likely yield no results, since the `exact` keyword searches for exact matches with a full line.
+The `separator` argument is only used with `exact=True` and allows a non-endline separator to be specified when searching for an exact match. For a practical use case, consider that segment names in MHARNESS files have topology information encoded using underscores; for example, "SEG5___S0___C0" indicates a conductor nested within a shield on segment SEG5. If the user wishes to find occurrences of SEG5 that do *not* contain topology information, executing `file.find('SEG5')` will yield false positives, since "SEG5" is a partial match for "SEG5___S0___C0". On the other hand, `file.find('SEG5', exact=True)` will likely yield no results, since an "exact" search only identifies exact matches to entire lines, and additional information will typically be present in the same line.
 
- If an empty string is provided as a separator (1file.find('SEG5', exact=True, separator='')`), then EMAtools will split each line by whitespace and search for an exact match within the resulting array of strings. This will produce the desired result for this example, as only exact matches to `SEG5` surrounded by whitespace will be returned.
+ However, if an empty string is provided as a separator by executing `file.find('SEG5', exact=True, separator='')`, then EMAtools will split each line into separate strings at any whitespace characters and search for an exact match within the resulting array. This will produce the desired result for this example: it will only flag occurrences of "SEG5" that are surrounded by whitespace, which excludes instances with topology information, and it will not overlook lines where other information is present as long as it is separated from the search text by whitespace.
  
  The `separator` argument can also be a list or tuple of separators; for example, providing `separator=['(', ')']` will split each line by open and closed parentheses. Any standard regular expression may also be provided.
   
