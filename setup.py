@@ -8,8 +8,8 @@ here = pathlib.Path(__file__).parent.resolve()
 
 setup(
     name="EMAtools",  # Required
-    version="0.1.0",  # Required
-    description="An assortment of computational tools to make life easier at EMA.",  # Optional
+    version="0.2.0",  # Required
+    description="Python library for users of EMC Plus and Charge Plus.",  # Optional
     #long_description=long_description,  # Optional
     #long_description_content_type="text/markdown",  # Optional (see note above)
     url="https://github.com/GriffinKowash/EMAtools",  # Optional
