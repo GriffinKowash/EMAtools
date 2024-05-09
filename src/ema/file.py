@@ -1,6 +1,7 @@
 import warnings
 import os
 import time
+import re
 
 import numpy as np
 
@@ -144,6 +145,11 @@ class File:
         if not case:
             text = text.lower()
 
+        # Format separators into regex pattern if needed
+        if exact and separator is not None:
+            if isinstance(separator, (list, str)):
+                pattern = '|'.join(separator)
+
         # Create subset of self.lines bounded by start and end arguments
         if end is not None:
             lines = self.lines[start:end]
@@ -164,15 +170,15 @@ class File:
                 match = True
 
             elif exact and separator is not None:
-                if separator == '':
+                if separator == '': #general whitespace separator
                     if text in line.split():
                         match = True
                 else:
                     try:
-                        if text in line.split(separator):
+                        if text in re.split(pattern, line):
                             match = True
                     except ValueError as exc:
-                        print(f'Separator not supported: {separator}')
+                        print(f'Separator(s) not valid: {separator}')
                         print(exc)
 
             if match:
@@ -183,7 +189,7 @@ class File:
                     break
 
         if n_found == 0 and verbose:
-            print(f'Text string "{text}" not found in file.')
+            print(f'Text string "{text}" not found.')
 
         return np.array(indices)
         
@@ -432,6 +438,8 @@ class File:
             First line to print, or array of lines to print.
         l1 : int
             Last line to print.
+        numbered : bool
+            Whether to print line numbers alongside the text.
 
         Returns
         -------
@@ -474,6 +482,8 @@ class File:
             First index to print, or array of indices to print.
         i1 : int
             Last index to print.
+        numbered : bool
+            Whether to print line numbers alongside the text.
 
         Returns
         -------
@@ -483,20 +493,22 @@ class File:
         self.printlines(self.itol(i0), self.itol(i1), numbered)
             
                 
-    def head(self, n=10):
+    def head(self, n=10, numbered=True):
         """Wrapper for File.printlines; prints first n lines of file contents.
 
         Parameters
         ----------
         n : int
             Number of lines to print.
+        numbered : bool
+            Whether to print line numbers alongside the text.
 
         Returns
         -------
         None
         """
         
-        self.printlines(1, n)
+        self.printlines(1, n, numbered)
 
 
     ### Aliases for backward compatibility ###
