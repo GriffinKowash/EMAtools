@@ -45,7 +45,8 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 		- **[Probing voltage/current](#probing-voltagecurrent)**
 	- **[CoupledSim class](#coupledsim-class)**
 		- **[Instantiating a CoupledSim object](#instantiating-a-coupledsim-object)**
-		- **[Probing midpoint currents](#probing-midpoint-currents)**
+		- **[Probing current at midpoints](#probing-currents-at-midpoints)**
+		- **[Probing voltage at terminations](#probing-voltage-at-terminations)**
 
 
 # Installation
@@ -726,7 +727,7 @@ coupled = CoupledSim(emin, inp)
 ```
 
 
-### Probing midpoint currents
+### Probing currents at midpoints
 
 Manually placing current probes on a harness can be extremely time intensive when working with large models. The `probe_midpoint_currents` method automates this procedure by detecting points of interest in the harness and adding probe definitions to the input file.
 
@@ -761,3 +762,27 @@ If additional information from the algorithm is desired for debugging purposes, 
 ```
 coupled.probe_midpoint_currents('Conductor_1', verbose=True)
 ```
+
+
+### Probing voltage at terminations
+
+The `CoupledSim` class also supports automatic probing of conductor terminations. After creating a `CoupledSim` object as described above, call the  `probe_termination_voltages` method:
+
+```
+coupled.probe_termination_voltages()
+```
+
+As with `CoupledSim.probe_midpoint_currents`, a conductor or list of conductors can optionally be provided:
+
+```
+coupled.probe_termination_voltages('Conductor_1')
+coupled.probe_termination_voltages(['Conductor_3, 'Conductor_4'])
+```
+
+By default, this method places probes on all conductor terminations; however, for open-circuit voltage analysis, it is generally only necessary to probe high-resistance terminations. To exclude terminations below a minimum resistance, specify a cutoff using the `threshold` keyword argument:
+
+```
+coupled.probe_termination_voltages(threshold=1e6)
+```
+
+Note that any conductor endpoints without defined terminations will be ignored by this method.
