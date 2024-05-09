@@ -393,7 +393,7 @@ Alternatively, a list of line numbers can be provided. For example, `file.printl
 25 	| !EMRESULTS
 ```
 
-The `File.print` method performs the same function but accepts indices instead of line numbers. For the examples above, `file.print(9, 14)` and `file.print([0, 13, 24])` would produce identical results.
+The `File.print` method performs the same function but accepts indices (0-indexed) instead of line numbers (1-indexed). For the examples above, `file.print(9, 14)` and `file.print([0, 13, 24])` would produce identical results.
 
 The `File.head` method is a wrapper for `File.printlines` that displays the first `n` lines, where `n` is an integer provided as an argument. For example, running `file.head(5)` will display the following:
 
