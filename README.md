@@ -11,7 +11,6 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 # Table of Contents
 
 - **[Installation](#installation)**
-- **[Technical notes](#technical-notes)**
 - **[Usage](#usage)**
 	- **[Results module](#results-module)**
 		- **[Loading point probe results](#loading-point-probe-results)**
@@ -68,14 +67,6 @@ Import EMAtools in a Python script or shell:
 ```
 import ema
 ```
-
-
-# Technical notes
-
-## Array formatting
-
-By default, EMAtools formats arrays with two or more dimensions with **time or frequency**
-
 
 
 # Usage
