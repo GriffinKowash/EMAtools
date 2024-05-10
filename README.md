@@ -418,6 +418,8 @@ By default, the result is printed with line numbers and indentation for readabil
 
 ### Searching
 
+#### Find all
+
 Any change to a simulation file typically begins with locating a particular string of text. The base function for this task is `File.find_all`, which returns a list of all indices at which the provided search string is present in the file. For example, to search for every instance of `!NEW PROBE FILE NAME`:
 
 ```
@@ -441,7 +443,7 @@ Several optional keyword arguments can be set to refine the search parameters.
 
 - `exact` is a boolean that determines whether a line must exactly match or simply contain the search string. (Default False)
 
-- `separator` is an optional string that modifies the behavior of `exact` mode; see explanation below.
+- `separator` is an optional string that modifies the behavior of `exact` mode; [see explanation below](#separator-keyword).
   
 - `case` is a boolean that determines whether the comparison against the search string should be case-sensitive. (Default True)
   
@@ -453,11 +455,7 @@ As an example, the following command will locate case-insensitive exact matches 
   indices = file.find_all('* geometry: line', start=150, exact=True, case=False, n_max=5)
   ```
   
-The `separator` argument is only used with `exact=True` and allows a non-endline separator to be specified when searching for an exact match. For a practical use case, consider that segment names in MHARNESS files have topology information encoded using underscores; for example, "SEG5___S0___C0" indicates a conductor nested within a shield on segment SEG5. If the user wishes to find occurrences of SEG5 that do *not* contain topology information, executing `file.find('SEG5')` will yield false positives, since "SEG5" is a partial match for "SEG5___S0___C0". On the other hand, `file.find('SEG5', exact=True)` will likely yield no results, since an "exact" search only identifies exact matches to entire lines, and additional information will typically be present in the same line.
-
- However, if an empty string is provided as a separator by executing `file.find('SEG5', exact=True, separator='')`, then EMAtools will split each line into separate strings at any whitespace characters and search for an exact match within the resulting array. This will produce the desired result for this example: it will only flag occurrences of "SEG5" that are surrounded by whitespace, which excludes instances with topology information, and it will not overlook lines where other information is present as long as it is separated from the search text by whitespace.
- 
- The `separator` argument can also be a list or tuple of separators; for example, providing `separator=['(', ')']` will split each line by open and closed parentheses. Any standard regular expression may also be provided.
+#### Find
   
  `File.find` is a wrapper method for `File.find_all` that finds a single match to the search string rather than returning a list of all matches. To find the first instance of "!NEW PROBE FILE NAME":
 
@@ -473,12 +471,25 @@ file.find('!NEW PROBE FILE NAME', 5)
 
 The same keyword arguments used by `File.find_all` can also be provided to `File.find`, apart from `n_max`, which is automatically set to `n`.
 
+#### Find next
+
   Finally, the `File.find_next` method provides a convenient syntax for finding the next occurrence of a text string after a specified index. For example, after finding the starting index of a current source definition, a user may wish to locate the next blank line in the file:
   
 ```
 source_index = file.find('SOURCE NAME: Current Source')
 next_blank = file.find_next(source_index, '')
 ```
+
+#### Separator keyword
+
+The `separator` argument is only used with `exact=True` and allows a non-endline separator to be specified when searching for an exact match. During the search process, each line is split into separate strings at instances of the separator, and the search text is compared against each resulting string rather than against the line as a whole.
+
+ Setting the separator to an empty string will split each line by whitespace. Instead of a string, multiple separators can be specified in a list or tuple; for example, providing `separator=['(', ')']` will split each line by open and closed parentheses. Any standard regular expression may also be used. This option is supported for all of the search methods described above.
+
+ For a practical use case, consider that segment names in MHARNESS files have topology information encoded using underscores; for example, "SEG5___S0___C0" indicates a conductor nested in a shield along segment SEG5. If the user wishes to find occurrences of SEG5 that do *not* contain topology information, executing `file.find('SEG5')` will yield false positives, since "SEG5" is a partial match for "SEG5___S0___C0". On the other hand, `file.find('SEG5', exact=True)` will likely yield no results, since an "exact" search only identifies exact matches to entire lines, and additional information will typically be present in the same line.
+
+ The desired result can be achieved by executing `file.find('SEG5', exact=True, separator='')`, with an empty string as the separator. This will only flag occurrences of "SEG5" that are surrounded by whitespace, which excludes instances with topology information, and it will not overlook lines where additional, whitespace-delimited information is present.
+
 
 
 ### Inserting
