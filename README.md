@@ -2,7 +2,7 @@
 
 # Description
 
-An assortment of computational Python tools to make life easier at EMA. Focuses on automation of tasks that require:
+An assortment of computational tools to make life easier for users of EMC Plus and Charge Plus. Focuses on automation of tasks that require:
 - Analysis of simulation results
 - Bulk editing of simulation files
 - Complex preprocessing operations
@@ -11,6 +11,7 @@ An assortment of computational Python tools to make life easier at EMA. Focuses 
 # Table of Contents
 
 - **[Installation](#installation)**
+- **[Examples](#examples)**
 - **[Usage](#usage)**
 	- **[Results module](#results-module)**
 		- **[Loading point probe results](#loading-point-probe-results)**
@@ -69,9 +70,17 @@ import ema
 ```
 
 
+# Examples
+
+This document focuses on technical descriptions of the capabilities of EMAtools. For walkthroughs of practical use cases, please see the following entries in the [Examples](https://github.com/GriffinKowash/EMAtools/tree/main/examples) section of the repository:
+- [Shielding effectiveness of an irregular box](https://github.com/GriffinKowash/EMAtools/tree/main/examples#shielding-effectiveness-of-an-irregular-box)
+- [Bulk modification of plane wave sources](https://github.com/GriffinKowash/EMAtools/tree/main/examples#bulk-modification-of-plane-wave-sources)
+
+
+
 # Usage
 
-When in doubt, refer to in-code documention for the feature in question at https://github.com/GriffinKowash/EMAtools/tree/main/src/ema. Please notify Griffin at griffin.kowash@ema3d.com if any conflicts between documentation and true behavior are observed.
+When in doubt, refer to inline documention for the feature in question at https://github.com/GriffinKowash/EMAtools/tree/main/src/ema. Please notify Griffin at griffin.kowash@ema3d.com if any conflicts between documentation and true behavior are observed.
 
 ## Results module
 
