@@ -8,5 +8,7 @@ from .coupled import CoupledSim
 from .inp import Inp
 from .cin import Cin
 
+from . import testing
+
 ### Aliases for backward compatibility ###
 import ema.results as probes
