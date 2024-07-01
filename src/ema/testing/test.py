@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from .metrics import calc_quality_metric, calc_error
 
 try:
-	import seaborn
+	import seaborn as sns
 	sns.set()
 except:
 	pass
