@@ -121,7 +121,8 @@ class RegressionTest(Test):
 		# Define plot configuration
 		plot_config = {
 			'xlabel': 'Time (s)',
-			'ylabel': 'Potential (V)'
+			'ylabel': 'Potential (V)',
+			'name': 'BEM potential'
 			}
 
 		# Add subtest to queue
@@ -146,7 +147,8 @@ class RegressionTest(Test):
 		# Define plot configuration
 		plot_config = {
 			'xlabel': 'Time (s)',
-			'ylabel': 'Potential (V)'
+			'ylabel': 'Potential (V)',
+			'name': 'FEM potential'
 			}
 
 		# Add subtest to queue
@@ -154,42 +156,84 @@ class RegressionTest(Test):
 		
 	def add_simple_plot_fluid(self, threshold, metric=None):
 		"""Add results from simple_plot_fluid.dat to the regression test."""
-
+		
 		if metric is None:
 			metric = calc_quality_metric
 			
-		label_temp = 'simple_plot_fluid_temp'
-		label_dens = 'simple_plot_fluid_dens'
+		label_base = 'simple_plot_fluid'
 		filename = 'simple_plot_fluid.dat'
 
 		# Load simulation and reference data
-		t_ref, temp_min_ref, temp_max_ref, temp_mean_ref, dens_min_ref, dens_max_ref, dens_mean_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_sim, temp_min_sim, temp_max_sim, temp_mean_sim, dens_min_sim, dens_max_sim, dens_mean_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		
-		self.data[label_temp + '_sim'] = (t_sim, temp_min_sim, temp_mean_sim, temp_max_sim)
-		self.data[label_temp + '_ref'] = (t_ref, temp_min_ref, temp_mean_ref, temp_max_ref)
-		
-		self.data[label_dens + '_sim'] = (t_sim, dens_min_sim, dens_mean_sim, dens_max_sim)
-		self.data[label_dens + '_ref'] = (t_ref, dens_min_ref, dens_mean_ref, dens_max_ref)
+		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
+		t_sim = contents_sim[0]
+		data_sim = contents_sim[1:]
 
+		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
+		t_ref = contents_ref[0]
+		data_ref = contents_ref[1:]
+		
 		# Ensure time steps align
 		self._validate_time_steps(t_ref, t_sim)
 		
 		# Define plot configuration
-		plot_config_temp = {
+		plot_config = {
 			'xlabel': 'Time (s)',
-			'ylabel': 'Temperature (K?)'
+			'ylabel': 'Temperature (K)'
 			}
 		
-		plot_config_dens = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Density (?)'
-			}
+		# Unpack data and add tests
+		for i in range(0, data_sim.shape[0], 3):
+			min_sim, max_sim, mean_sim = data_sim[i:i+3]
+			min_ref, max_ref, mean_ref = data_ref[i:i+3]
+			
+			label = label_base + '_component' + str(i // 3)
+			plot_config['name'] = 'fluid temperature, component ' + str(i // 3)
+			
+			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
+			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
+			
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
+			
+	def add_simple_plot_density(self, threshold, metric=None):
+		"""Add results from simple_plot_density.dat to the regression test."""
+		
+		if metric is None:
+			metric = calc_quality_metric
+			
+		label_base = 'simple_plot_density'
+		filename = 'simple_plot_density.dat'
 
-		# Add subtest to queue
-		self.tests.append((label_temp, t_sim, temp_mean_sim, temp_mean_ref, metric, threshold, plot_config_temp))
-		self.tests.append((label_dens, t_sim, dens_mean_sim, dens_mean_ref, metric, threshold, plot_config_dens))
+		# Load simulation and reference data
+		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
+		t_sim = contents_sim[0]
+		data_sim = contents_sim[1:]
+
+		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
+		t_ref = contents_ref[0]
+		data_ref = contents_ref[1:]
 		
+		# Ensure time steps align
+		self._validate_time_steps(t_ref, t_sim)
+		
+		# Define plot configuration
+		plot_config = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Density (kg/m^3?)'
+			}
+		
+		# Unpack data and add tests
+		for i in range(0, data_sim.shape[0], 3):
+			min_sim, max_sim, mean_sim = data_sim[i:i+3]
+			min_ref, max_ref, mean_ref = data_ref[i:i+3]
+			
+			label = label_base + '_component' + str(i // 3)
+			plot_config['name'] = 'fluid density, component ' + str(i // 3)
+			
+			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
+			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
+			
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
+
 	def add_simple_plot_pic_dens(self, threshold, metric=None):
 		"""Add results from simple_plot_pic_dens.dat to the regression test."""
 		
@@ -219,15 +263,16 @@ class RegressionTest(Test):
 		
 		# Unpack data and add tests
 		for i in range(0, data_sim.shape[0], 3):
-			min_sim, mean_sim, max_sim = data_sim[i:i+3]
-			min_ref, mean_ref, max_ref = data_ref[i:i+3]
+			min_sim, max_sim, mean_sim = data_sim[i:i+3]
+			min_ref, max_ref, mean_ref = data_ref[i:i+3]
 			
 			label = label_base + '_species' + str(i // 3)
+			plot_config['name'] = 'plasma density, species ' + str(i // 3)
 			
 			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
 			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
 			
-			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
 			
 	def add_simple_plot_pic_temp(self, threshold, metric=None):
 		"""Add results from simple_plot_pic_temp.dat to the regression test."""
@@ -253,20 +298,21 @@ class RegressionTest(Test):
 		# Define plot configuration
 		plot_config = {
 			'xlabel': 'Time (s)',
-			'ylabel': 'Temperature (eV?)'
+			'ylabel': 'Temperature (eV)'
 			}
 
 		# Unpack data and add tests
 		for i in range(0, data_sim.shape[0], 3):
-			min_sim, mean_sim, max_sim = data_sim[i:i+3]
-			min_ref, mean_ref, max_ref = data_ref[i:i+3]
+			min_sim, max_sim, mean_sim = data_sim[i:i+3]
+			min_ref, max_ref, mean_ref = data_ref[i:i+3]
 			
 			label = label_base + '_species' + str(i // 3)
+			plot_config['name'] = 'plasma temperature, species ' + str(i // 3)
 			
 			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
 			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
 			
-			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
 
 	def evaluate(self):
 		# Evaluate regression for each subtest
@@ -345,7 +391,7 @@ class RegressionTest(Test):
 		configuration = {
 			'xlabel': 'Time (s)',
 			'ylabel': 'Value (unspecified)',
-			'name': self.name
+			'name': 'simple plot'
 			}
 		
 		# Update default with optional user parameters
@@ -366,7 +412,7 @@ class RegressionTest(Test):
 		ax1.legend()
 		ax1.set_xlabel(configuration['xlabel'])
 		ax1.set_ylabel(configuration['ylabel'])
-		fig1.suptitle(f'{configuration['name']} - simulation and reference')
+		fig1.suptitle(f'{self.name} - {configuration['name']}')
 
 		# Plot error if reference is provided
 		if t_ref is not None:
@@ -375,7 +421,7 @@ class RegressionTest(Test):
 			ax2.legend()
 			ax2.set_xlabel(configuration['xlabel'])
 			ax2.set_ylabel('Error (%)')
-			fig2.suptitle(f'{configuration['name']} - percent error against reference')
+			fig2.suptitle(f'{self.name} - {configuration['name']} (error)')
 			
 			return fig1, fig2
 		
