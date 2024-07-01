@@ -117,9 +117,15 @@ class RegressionTest(Test):
 
 		# Ensure time steps align
 		self._validate_time_steps(t_ref, t_sim)
+		
+		# Define plot configuration
+		plot_config = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Potential (V)'
+			}
 
 		# Add subtest to queue
-		self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold))
+		self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
 		
 	def add_simple_plot_fem(self, threshold, metric=None):
 		if metric is None:
@@ -136,9 +142,15 @@ class RegressionTest(Test):
 
 		# Ensure time steps align
 		self._validate_time_steps(t_ref, t_sim)
+		
+		# Define plot configuration
+		plot_config = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Potential (V)'
+			}
 
 		# Add subtest to queue
-		self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold))
+		self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
 		
 	def add_simple_plot_fluid(self, threshold, metric=None):
 		"""Add results from simple_plot_fluid.dat to the regression test."""
@@ -162,15 +174,104 @@ class RegressionTest(Test):
 
 		# Ensure time steps align
 		self._validate_time_steps(t_ref, t_sim)
+		
+		# Define plot configuration
+		plot_config_temp = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Temperature (K?)'
+			}
+		
+		plot_config_dens = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Density (?)'
+			}
 
 		# Add subtest to queue
-		self.tests.append((label_temp, t_sim, temp_mean_sim, temp_mean_ref, metric, threshold))
-		self.tests.append((label_dens, t_sim, temp_mean_sim, temp_mean_ref, metric, threshold))
+		self.tests.append((label_temp, t_sim, temp_mean_sim, temp_mean_ref, metric, threshold, plot_config_temp))
+		self.tests.append((label_dens, t_sim, dens_mean_sim, dens_mean_ref, metric, threshold, plot_config_dens))
+		
+	def add_simple_plot_pic_dens(self, threshold, metric=None):
+		"""Add results from simple_plot_pic_dens.dat to the regression test."""
+		
+		if metric is None:
+			metric = calc_quality_metric
+			
+		label_base = 'simple_plot_pic_dens'
+		filename = 'simple_plot_pic_dens.dat'
+
+		# Load simulation and reference data
+		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
+		t_sim = contents_sim[0]
+		data_sim = contents_sim[1:]
+
+		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
+		t_ref = contents_ref[0]
+		data_ref = contents_ref[1:]
+		
+		# Ensure time steps align
+		self._validate_time_steps(t_ref, t_sim)
+		
+		# Define plot configuration
+		plot_config = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Number density (#/m^3)'
+			}
+		
+		# Unpack data and add tests
+		for i in range(0, data_sim.shape[0], 3):
+			min_sim, mean_sim, max_sim = data_sim[i:i+3]
+			min_ref, mean_ref, max_ref = data_ref[i:i+3]
+			
+			label = label_base + '_species' + str(i // 3)
+			
+			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
+			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
+			
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
+			
+	def add_simple_plot_pic_temp(self, threshold, metric=None):
+		"""Add results from simple_plot_pic_temp.dat to the regression test."""
+		
+		if metric is None:
+			metric = calc_quality_metric
+			
+		label_base = 'simple_plot_pic_temp'
+		filename = 'simple_plot_pic_temp.dat'
+
+		# Load simulation and reference data
+		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
+		t_sim = contents_sim[0]
+		data_sim = contents_sim[1:]
+
+		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
+		t_ref = contents_ref[0]
+		data_ref = contents_ref[1:]
+		
+		# Ensure time steps align
+		self._validate_time_steps(t_ref, t_sim)
+		
+		# Define plot configuration
+		plot_config = {
+			'xlabel': 'Time (s)',
+			'ylabel': 'Temperature (eV?)'
+			}
+
+		# Unpack data and add tests
+		for i in range(0, data_sim.shape[0], 3):
+			min_sim, mean_sim, max_sim = data_sim[i:i+3]
+			min_ref, mean_ref, max_ref = data_ref[i:i+3]
+			
+			label = label_base + '_species' + str(i // 3)
+			
+			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
+			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
+			
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
 
 	def evaluate(self):
 		# Evaluate regression for each subtest
 		results = {}
-		for label, x, sim, ref, metric, threshold in self.tests:
+		for label, x, sim, ref, metric, threshold, plot_config in self.tests:
 			value = metric(sim, ref, axis=-1)
 
 			if metric is calc_quality_metric:
@@ -212,104 +313,39 @@ class RegressionTest(Test):
 
 				for i in failures:
 					print(f'\t\t\t{x[i][0]}\t{ref[i]}\t{sim[i]}\t{value[i]}')
+					
+	def output_plots(self, output_dir):
+		"""Outputs plots for all subtests."""
+		
+		for label, t, sim, ref, metric, threshold, plot_config in self.tests:
+			if 'simple_plot' in label:
+				# Create output directory, if necessary
+				if not os.path.exists(output_dir):
+					os.mkdir(output_dir)
 
-	def output_simple_plot(self, output_dir):
-		"""Plots and saves results from simple_plot.dat"""
-		
-		# Create output directory, if necessary
-		if not os.path.exists(output_dir):
-			os.mkdir(output_dir)
+				# Get time series data
+				label_ref = label + '_ref'
+				label_sim = label + '_sim'
+				t_ref, min_ref, mean_ref, max_ref = self.data[label_ref]
+				t_sim, min_sim, mean_sim, max_sim = self.data[label_sim]
 
-		# Specify plot labels
-		config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Potential (V)',
-			'name': self.name
-			}
+				# Generate and save plots
+				name_fmt = self.name.replace(' ', '_')
+				fig1, fig2 = self._create_simple_plot(t_sim, min_sim, mean_sim, max_sim, t_ref, min_ref, mean_ref, max_ref, plot_config)
+				fig1.savefig(os.path.join(output_dir, f'{name_fmt}_{label}_results.png'))
+				fig2.savefig(os.path.join(output_dir, f'{name_fmt}_{label}_error.png'))
+			
+			else:
+				raise ValueError(f'Test "{label}" not supported for plot generation.')
 
-		# Get time series data
-		t_ref, min_ref, mean_ref, max_ref = self.data['simple_plot_ref']
-		t_sim, min_sim, mean_sim, max_sim = self.data['simple_plot_sim']
-
-		# Generate and save plots
-		name_fmt = self.name.replace(' ', '_')
-		
-		fig1, fig2 = self._create_simple_plot(t_sim, min_sim, mean_sim, max_sim, t_ref, min_ref, mean_ref, max_ref, config)
-		fig1.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_results.png'))
-		fig2.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_error.png'))
-		
-	def output_simple_plot_fem(self, output_dir):
-		"""Plots and saves results from simple_plot_fem.dat"""
-		
-		# Create output directory, if necessary
-		if not os.path.exists(output_dir):
-			os.mkdir(output_dir)
-		
-		# Specify plot labels
-		config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Potential (V)',
-			'name': self.name
-			}
-
-		# Get time series data
-		t_ref, min_ref, mean_ref, max_ref = self.data['simple_plot_fem_ref']
-		t_sim, min_sim, mean_sim, max_sim = self.data['simple_plot_fem_sim']
-
-		# Generate and save plots
-		name_fmt = self.name.replace(' ', '_')
-		
-		fig1, fig2 = self._create_simple_plot(t_sim, min_sim, mean_sim, max_sim, t_ref, min_ref, mean_ref, max_ref, config)
-		fig1.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_fem_results.png'))
-		fig2.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_fem_error.png'))
-		
-	def output_simple_plot_fluid(self, output_dir):
-		"""Plots and saves results from simple_plot_fluid.dat"""
-		
-		# Create output directory, if necessary
-		if not os.path.exists(output_dir):
-			os.mkdir(output_dir)
-
-		# Specify plot labels
-		config_temp = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Temperature (K?)',
-			'name': self.name.replace(' ', '_')
-			}
-		
-		config_dens = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Density (?)',
-			'name': self.name
-			}
-
-		# Get time series data
-		t_ref, temp_min_ref, temp_mean_ref, temp_max_ref = self.data['simple_plot_fluid_temp_ref']
-		t_sim, temp_min_sim, temp_mean_sim, temp_max_sim = self.data['simple_plot_fluid_temp_sim']
-		
-		_, dens_min_ref, dens_mean_ref, dens_max_ref = self.data['simple_plot_fluid_dens_ref']
-		_, dens_min_sim, dens_mean_sim, dens_max_sim = self.data['simple_plot_fluid_dens_sim']
-
-		# Generate and save plots
-		name_fmt = self.name.replace(' ', '_')
-
-		fig1, fig2 = self._create_simple_plot(t_sim, temp_min_sim, temp_mean_sim, temp_max_sim, t_ref, temp_min_ref, temp_mean_ref, temp_max_ref, config_temp)
-		fig1.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_fluid_temp_results.png'))
-		fig2.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_fluid_temp_error.png'))
-		
-		fig3, fig4 = self._create_simple_plot(t_sim, dens_min_sim, dens_mean_sim, dens_max_sim, t_ref, dens_min_ref, dens_mean_ref, dens_max_ref, config_dens)
-		fig3.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_fluid_dens_results.png'))
-		fig4.savefig(os.path.join(output_dir, f'{name_fmt}_simple_plot_fluid_dens_error.png'))
-		
-	@staticmethod
-	def _create_simple_plot(t_sim, min_sim, mean_sim, max_sim, t_ref=None, min_ref=None, mean_ref=None, max_ref=None, config=None):
+	def _create_simple_plot(self, t_sim, min_sim, mean_sim, max_sim, t_ref=None, min_ref=None, mean_ref=None, max_ref=None, config=None):
 		"""Plots simple_plot results and optionally error against reference data."""
 
 		# Plot configuration defaults
 		configuration = {
 			'xlabel': 'Time (s)',
 			'ylabel': 'Value (unspecified)',
-			'name': 'Simple plot'
+			'name': self.name
 			}
 		
 		# Update default with optional user parameters
