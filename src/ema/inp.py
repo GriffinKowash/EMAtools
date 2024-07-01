@@ -23,7 +23,7 @@ class Inp(File):
     def __init__(self, path):
         """Initializes Inp object from path and filename."""
         
-        File.__init__(self, path)
+        File.__init__(self, path, ext='.inp')
 
         # Store timestep parameters
         self.timestep, self.n_timesteps, self.endtime = self.get_timesteps()
@@ -169,3 +169,38 @@ class Inp(File):
 
         if i0 is not None and i1 is not None:
             self.print(i0, i1, numbered)
+
+
+    def set_terminations_by_segment(self, segments, resistance):
+        """Sets conductor terminations on a given segment to the specified value.
+        If a conductor terminates at both ends of a segment, the first end listed
+        in the inp is modified while the other is unchanged.
+        """
+
+        # Make single segment into list if necessary
+        if not isinstance(segments, (list, tuple)):
+            segments = [segments]
+
+        # Modify terminations
+        termination_levels = self.find_all('!BOUNDARY CONDITION')
+
+        for i0 in termination_levels:
+            if self.get(i0 + 1) != '!!RESISTIVE':
+                print(f'Skipping termination at line {Inp.itol(i0)}; only resistive terminations are currently supported.')
+                continue
+
+            i1 = self.find_next(i0, '', exact=True)
+
+            for segment in segments:
+                occurrences = self.find_all(segment, start=i0, end=i1, exact=True, separator=['_', ' '])
+                added = []
+
+                if len(occurrences) > 0:
+                    for j in occurrences:
+                        entries = self.get(j).split()
+
+                        # Only modify first termination of each conductor and omit shields
+                        if '___S' not in entries[1] and entries[1] not in added:
+                            entries[3] = str(resistance)
+                            self.lines[j] = '        '.join(entries)
+                            added.append(entries[1])

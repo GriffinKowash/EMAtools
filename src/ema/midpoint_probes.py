@@ -12,7 +12,7 @@ def create_graph(inp, conductor):
         # Find connecting segments
         segments = []
         for j in inp.find_all(conductor, start=i0, end=i1, verbose=False):
-            name = inp.get(j).split()[0]#.split('_')[0]
+            name = inp.get(j).split()[0].split('_')[0]
             segments.append(name)
             
         # Add neighbors to graph for each segment
@@ -59,7 +59,7 @@ def parse_segment(inp, i0, conductors):
     except ValueError as exc:
         print(f'Failed to unpack line {Inp.itol(i0 + 2)}: {inp.get(i0 + 2)}')
 
-    segment = segment#.split('_')[0] #strip topology information
+    segment = segment.split('_')[0] #strip topology information
 
     # Read conductors and add segment to dictionary
     for j in range(i0 + 3, i1):
@@ -132,7 +132,7 @@ def create_limbs(inp, conductor, verbose=False):
         # Find connecting segments
         segments = []
         for j in inp.find_all(conductor, start=i0, end=i1, verbose=False):
-            name = inp.get(j).split()[0]#.split('_')[0]
+            name = inp.get(j).split()[0].split('_')[0]
             segments.append(name)
             
         if len(segments) == 0:
@@ -189,10 +189,9 @@ def order_limb(limb, graph, verbose=False):
     # If length is one, no need to order
     if len(limb) == 1:
         return limb
-    
+
+    # Start ordering from arbitrary endpoint
     limb_ordered = []
-    
-    # Start at arbitrary endpoint
     endpoints = find_limb_endpoints(limb, graph, verbose)
     if len(endpoints) == 0:
         print(f'\t*** WARNING: No endpoints detected for limb: {limb}.')
@@ -213,6 +212,16 @@ def order_limb(limb, graph, verbose=False):
                 break
                 
     return limb_ordered
+
+
+def strip_topology(segments):
+    """Removes topology suffix from segment names."""
+
+    if not isinstance(segments, (list, tuple)):
+        segments = [segments]
+
+    segments = [segment.split('_')[0] for segment in segments]
+    return segments
 
 
 def find_cells_in_segment(segment, emin):
@@ -364,6 +373,7 @@ def probe_conductor_currents(conductor, inp, emin, verbose=False):
     if verbose:
         print('')
     for segment, index in midpoints:
+        segment = restore_segment_topology(segment, conductor, inp)
         inp.probe_current(segment, conductor, index)
         if verbose:
             print(f'Conductor {conductor}: added current probe to segment {segment} at index {index}.')
@@ -374,3 +384,35 @@ def probe_conductor_currents(conductor, inp, emin, verbose=False):
         inp.print_probes()
     
 
+def format_segment_name(segment, conductor):
+    """Temporary function to strip topology info from segment name if the conductor being probed
+    is a shield. This should ultimately be replaced by a more comprehensive and informed
+    strategy for dealing with topology tags."""
+
+    conductor_split = conductor.split('___')
+
+    if len(conductor_split) > 1:
+        if 'S' in conductor_split[-1]:
+            segment = segment.split('_')[0]
+
+    return segment
+
+
+def restore_segment_topology(segment, conductor, inp):
+    """Recreates full segment name with topology information for a given conductor."""
+
+    i_start = inp.find('Section 5: CABLE SEGMENT TOPOLOGY')
+    i_stop = inp.find('Section 5.1: CABLE JUNCTION TOPOLOGY')
+
+    indices = inp.find_all(segment, i_start, i_stop, exact=True, separator=('_', ' '))
+    #print(f'found {len(indices)} occurrences of segment {segment}.')
+
+    for i0 in indices:
+        i1 = inp.find_next(i0, '', exact=True)
+
+        if inp.find(conductor, start=i0+1, end=i1):
+            print(f'found conductor {conductor}')
+            segment = inp.get(i0).split()[0]
+            break
+
+    return segment

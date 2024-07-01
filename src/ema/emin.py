@@ -14,7 +14,7 @@ class Emin(File):
     def __init__(self, path):
         """Initializes Emin object from path and filename."""
         
-        File.__init__(self, path)
+        File.__init__(self, path, ext='.emin')
 
 
     def modify_isotropic_material(self, name, sig=None, eps=None, mu=None, sigm=None, eps_rel=None, mu_rel=None):

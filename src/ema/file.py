@@ -9,16 +9,31 @@ import numpy as np
 class File:
     """Parent class for handling .emin, .inp, and .cin files."""
     
-    def __init__(self, path):
+    def __init__(self, path, ext=None):
         """Initializes file object from path and filename."""
-        
+
+        # Check for path existence
         if not os.path.exists(path):
             raise FileNotFoundError(f'Path {path} does not exist.')
+
+        # Automatically find file with extension in directory, if specified
+        if ext is not None and os.path.isdir(path):
+            files = [file for file in os.listdir(path) if file.endswith(ext)]
+            if len(files) == 0:
+                raise FileNotFoundError(f'Could not find a file with extension {ext} in directory {path}.')
+            else:
+                if len(files) > 1:
+                    print(f'Found multiple files with extension {ext} in directory {path}; defaulting to first found.')
+                    for file in files:
+                        print(f'\t{file}')
+                self.path = os.path.join(path, files[0])
+
+        # Otherwise, set path to user argument
         else:
             self.path = path
             
+        # Read contents and strip newline characters
         with open(self.path, 'r') as file:
-            #self.lines = file.readlines()
             self.lines = file.read().splitlines()
         
         
@@ -113,7 +128,7 @@ class File:
         return i + 1
         
         
-    def find_all(self, text, start=0, end=None, exact=False, separator=None, case=True, n_max=None, verbose=True):
+    def find_all(self, text, start=0, end=None, exact=False, separator=None, case=True, n_max=None, verbose=False):
         """Finds indices of all occurrences of a text string in self.lines.
 
         Parameters
@@ -126,7 +141,7 @@ class File:
             Index at which to stop search; defaults to end of file.
         exact : bool (optional)
             Whether line must exactly match or simply contain text string.
-        separator : str | None (optional)
+        separator : str | list | None (optional)
             Used with "exact" to split each line by the separator before comparison.
         case : bool (optional)
             Whether to require case matching.
@@ -147,7 +162,7 @@ class File:
 
         # Format separators into regex pattern if needed
         if exact and separator is not None:
-            if isinstance(separator, (list, str)):
+            if isinstance(separator, (list, tuple, str)):
                 pattern = '|'.join(separator)
 
         # Create subset of self.lines bounded by start and end arguments

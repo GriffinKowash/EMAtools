@@ -36,12 +36,12 @@ class CoupledSim:
 		# Add current probes to midpoints
 		for conductor in conductors:
 		    print(f'Probing conductor {conductor}...')
-		    try:
-		        probe_conductor_currents(conductor, self.inp, self.emin, verbose)
-		        print('Probes added.\n')
-		    except Exception as exc:  #bug-prone; better to target explicit exceptions
-		        print(f'*** Failed to add probes to conductor {conductor}.')
-		        print(exc)
+		    #try:
+		    probe_conductor_currents(conductor, self.inp, self.emin, verbose)
+		    print('Probes added.\n')
+		    #except Exception as exc:  #bug-prone; better to target explicit exceptions
+		    #    print(f'*** Failed to add probes to conductor {conductor}.')
+		    #    print(exc)
 		        
 		print('\nFinished probing conductors.')
 
@@ -52,7 +52,7 @@ class CoupledSim:
 		Parameters
         ----------
         conductors : str | list (optional)
-        	Name or names of conductors to probe. If None, probes all conductors.
+        	Name or list of names of conductors to probe. If None, probes all conductors.
         threshold : float (optional)
         	Minimum termination resistance to probe. Useful for probing only Mohm terminations in Voc simulations.
 
@@ -66,12 +66,12 @@ class CoupledSim:
 
 		# Loop over terminations and place voltage probes
 		for segment, conductor, endpoint, resistance in terminations:
-			if float(resistance) <= threshold:
+			if float(resistance) < threshold:
 				continue
 
 			segment_root = segment.split('_')[0] #remove topology information if present
 			index = find_segment_endpoint_index(segment_root, endpoint, self.emin)
-			self.inp.probe_voltage(segment_root, conductor, index)
+			self.inp.probe_voltage(segment, conductor, index)
 
 
 	def print_probes(self):

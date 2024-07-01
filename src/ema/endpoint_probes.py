@@ -27,6 +27,15 @@ def find_terminations(inp, conductors=None):
     return terminations
 
 
+def filter_terminations_by_end(terminations, end=1):
+    """Take in a list of terminations from "find_terminations" and return only those with the specified "end" value."""
+
+    if end not in (1,2):
+        raise ValueError(f'"end" argument may only be 1 or 2; {end} provided.')
+
+    return [termination for termination in terminations if termination[2] == end]
+
+
 def find_segment_endpoint_index(segment, endpoint, emin):
     """Returns mesh index of MHARNESS segment based on endpoint number (1 or 2)"""
 
@@ -45,3 +54,23 @@ def find_segment_endpoint_index(segment, endpoint, emin):
     else:
         print(f'Unexpected value for segment endpoint: {end}.')
         return None
+
+
+def restore_segment_topology(segment, conductor, inp):
+    """Recreates full segment name with topology information for a given conductor."""
+
+    i_start = inp.find('Section 5: CABLE SEGMENT TOPOLOGY')
+    i_stop = inp.find('Section 5.1: CABLE JUNCTION TOPOLOGY')
+
+    indices = inp.find_all(segment, i_start, i_stop, exact=True, separator=('_', ' '))
+    print(f'found {len(indices)} occurrences of segment {segment}.')
+
+    for i0 in indices:
+        i1 = inp.find_next(i0, '', exact=True)
+
+        if inp.find(conductor, start=i0+1, end=i1):
+            print(f'found conductor {conductor}')
+            segment = inp.get(i0).split()[0]
+            break
+
+    return segment
