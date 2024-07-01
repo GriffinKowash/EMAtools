@@ -22,7 +22,7 @@ def calc_quality_metric(data, ref, beta=1e-16, axis=None):
 def calc_error(data, ref, axis=None):
     """Take in sim and reference data and calculates error."""
     
-    error = (data - ref) / ref
+    error = (data - ref) / (ref + 1e-16)
 
     if axis is not None:
         size = data.size / data.shape[axis]
