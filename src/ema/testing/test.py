@@ -330,7 +330,7 @@ class RegressionTest(Test):
 		ax1.legend()
 		ax1.set_xlabel(configuration['xlabel'])
 		ax1.set_ylabel(configuration['ylabel'])
-		fig1.suptitle(f'{self.name} - {configuration['name']}')
+		fig1.suptitle(f'{self.name} - {configuration["name"]}')
 
 		# Plot error if reference is provided
 		if t_ref is not None:
@@ -339,7 +339,7 @@ class RegressionTest(Test):
 			ax2.legend()
 			ax2.set_xlabel(configuration['xlabel'])
 			ax2.set_ylabel('Error (%)')
-			fig2.suptitle(f'{self.name} - {configuration['name']} (error)')
+			fig2.suptitle(f'{self.name} - {configuration["name"]} (error)')
 			
 			return fig1, fig2
 		
