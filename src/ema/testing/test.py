@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+from tkinter.filedialog import dialogstates
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -95,224 +96,140 @@ class ExecutionTest(Test):
 
 
 class RegressionTest(Test):
+	BEM = 0
+	FEM = 1
+	PIC_TEMP = 2
+	PIC_DENS = 3
+	FLUID_TEMP = 4
+	FLUID_DENS = 5
+
 	def __init__(self, name=None, sim_path=None, ref_path=None):
 		self.name = name
 		self.sim_path = sim_path
 		self.ref_path = ref_path
 		self.data = {} #stores raw test data by label
 		self.tests = [] #stores tuples of subtests to run
+		
+	@classmethod
+	def _get_filename(cls, result_id):
+		filenames = {
+			cls.BEM: 'simple_plot.dat',
+			cls.FEM: 'simple_plot_fem.dat',
+			cls.PIC_TEMP: 'simple_plot_pic_temp.dat',
+			cls.PIC_DENS: 'simple_plot_pic_dens.dat',
+			cls.FLUID_TEMP: 'simple_plot_fluid.dat',
+			cls.FLUID_DENS: 'simple_plot_density.dat'
+			}
+		return filenames[result_id]
+	
+	@classmethod
+	def _get_xlabel(cls, result_id):
+		xlabels = {
+			cls.BEM: 'Time (s)',
+			cls.FEM: 'Time (s)',
+			cls.PIC_TEMP: 'Time (s)',
+			cls.PIC_DENS: 'Time (s)',
+			cls.FLUID_TEMP: 'Time (s)',
+			cls.FLUID_DENS: 'Time (s)'
+			}
+		return xlabels[result_id]
+	
+	@classmethod
+	def _get_ylabel(cls, result_id):
+		ylabels = {
+			cls.BEM: 'Potential (V)',
+			cls.FEM: 'Potential (V)',
+			cls.PIC_TEMP: 'Temperature (eV)',
+			cls.PIC_DENS: 'Number density (#/m^3)',
+			cls.FLUID_TEMP: 'Temperature (K)',
+			cls.FLUID_DENS: 'Density (kg/m^3)'
+			}
+		return ylabels[result_id]
+	
+	@classmethod
+	def _get_label_suffix(cls, result_id, index):
+		if result_id in (cls.PIC_TEMP, cls.PIC_DENS):
+			return f'_species{index // 3}'
+		elif result_id in (cls.FLUID_TEMP, cls.FLUID_DENS):
+			return f'_component{index // 3}'
+		else:
+			return ''
+		
+	@classmethod
+	def _get_plot_name(cls, result_id, index):
+		if result_id == cls.BEM:
+			return 'BEM potential'
+		elif result_id == cls.FEM:
+			return 'FEM potential'
+		elif result_id == cls.PIC_TEMP:
+			return f'plasma temperature, species {index // 3}'
+		elif result_id == cls.PIC_DENS:
+			return f'plasma density, species {index // 3}'
+		elif result_id == cls.FLUID_TEMP:
+			return f'fluid temperature, component {index // 3}'
+		elif result_id == cls.FLUID_DENS:
+			return f'fluid density, component {index // 3}'
+			
+	@staticmethod
+	def _read_simple_plot(filepath):
+		contents = np.loadtxt(filepath).T
+		t = contents[0]
+		data = contents[1:]
+		return t, data
 
-	def add_simple_plot(self, threshold, metric=None):
+	def _add_simple_plot(self, result_id, threshold, metric=None):
+		"""Add results of type result_id to the regression test."""
+
+		# Set default metric
 		if metric is None:
 			metric = calc_quality_metric
-			
-		label = 'simple_plot'
-		filename = 'simple_plot.dat'
+		
+		# Get filename and test label
+		filename = self._get_filename(result_id)
+		label_base = filename.removesuffix('.dat')
 
 		# Load simulation and reference data
-		t_ref, min_ref, max_ref, mean_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_sim, min_sim, max_sim, mean_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
-		self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
-
+		t_sim, data_sim = self._read_simple_plot(os.path.join(self.sim_path, filename)) 
+		t_ref, data_ref = self._read_simple_plot(os.path.join(self.ref_path, filename))
+		
 		# Ensure time steps align
 		self._validate_time_steps(t_ref, t_sim)
 		
-		# Define plot configuration
-		plot_config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Potential (V)',
-			'name': 'BEM potential'
-			}
-
-		# Add subtest to queue
-		self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
+		# Unpack data and add tests
+		for i in range(0, data_sim.shape[0], 3):
+			min_sim, max_sim, mean_sim = data_sim[i:i+3]
+			min_ref, max_ref, mean_ref = data_ref[i:i+3]
+			
+			label = label_base + self._get_label_suffix(result_id, i)
+			
+			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
+			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
+			
+			plot_config = {
+				'xlabel': self._get_xlabel(result_id),
+				'ylabel': self._get_ylabel(result_id),
+				'name': self._get_plot_name(result_id, i)
+				}
+			
+			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
+			
+	def add_simple_plot_bem(self, threshold, metric=None):
+		self._add_simple_plot(self.BEM, threshold, metric)
 		
 	def add_simple_plot_fem(self, threshold, metric=None):
-		if metric is None:
-			metric = calc_quality_metric
-			
-		label = 'simple_plot_fem'
-		filename = 'simple_plot_fem.dat'
-
-		# Load simulation and reference data
-		t_ref, min_ref, max_ref, mean_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_sim, min_sim, max_sim, mean_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
-		self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
-
-		# Ensure time steps align
-		self._validate_time_steps(t_ref, t_sim)
+		self._add_simple_plot(self.FEM, threshold, metric)
 		
-		# Define plot configuration
-		plot_config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Potential (V)',
-			'name': 'FEM potential'
-			}
-
-		# Add subtest to queue
-		self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config))
+	def add_simple_plot_fluid_temp(self, threshold, metric=None):
+		self._add_simple_plot(self.FLUID_TEMP, threshold, metric)
+	
+	def add_simple_plot_fluid_dens(self, threshold, metric=None):
+		self._add_simple_plot(self.FLUID_DENS, threshold, metric)
 		
-	def add_simple_plot_fluid(self, threshold, metric=None):
-		"""Add results from simple_plot_fluid.dat to the regression test."""
-		
-		if metric is None:
-			metric = calc_quality_metric
-			
-		label_base = 'simple_plot_fluid'
-		filename = 'simple_plot_fluid.dat'
-
-		# Load simulation and reference data
-		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		t_sim = contents_sim[0]
-		data_sim = contents_sim[1:]
-
-		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_ref = contents_ref[0]
-		data_ref = contents_ref[1:]
-		
-		# Ensure time steps align
-		self._validate_time_steps(t_ref, t_sim)
-		
-		# Define plot configuration
-		plot_config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Temperature (K)'
-			}
-		
-		# Unpack data and add tests
-		for i in range(0, data_sim.shape[0], 3):
-			min_sim, max_sim, mean_sim = data_sim[i:i+3]
-			min_ref, max_ref, mean_ref = data_ref[i:i+3]
-			
-			label = label_base + '_component' + str(i // 3)
-			plot_config['name'] = 'fluid temperature, component ' + str(i // 3)
-			
-			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
-			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
-			
-			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
-			
-	def add_simple_plot_density(self, threshold, metric=None):
-		"""Add results from simple_plot_density.dat to the regression test."""
-		
-		if metric is None:
-			metric = calc_quality_metric
-			
-		label_base = 'simple_plot_density'
-		filename = 'simple_plot_density.dat'
-
-		# Load simulation and reference data
-		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		t_sim = contents_sim[0]
-		data_sim = contents_sim[1:]
-
-		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_ref = contents_ref[0]
-		data_ref = contents_ref[1:]
-		
-		# Ensure time steps align
-		self._validate_time_steps(t_ref, t_sim)
-		
-		# Define plot configuration
-		plot_config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Density (kg/m^3?)'
-			}
-		
-		# Unpack data and add tests
-		for i in range(0, data_sim.shape[0], 3):
-			min_sim, max_sim, mean_sim = data_sim[i:i+3]
-			min_ref, max_ref, mean_ref = data_ref[i:i+3]
-			
-			label = label_base + '_component' + str(i // 3)
-			plot_config['name'] = 'fluid density, component ' + str(i // 3)
-			
-			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
-			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
-			
-			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
-
-	def add_simple_plot_pic_dens(self, threshold, metric=None):
-		"""Add results from simple_plot_pic_dens.dat to the regression test."""
-		
-		if metric is None:
-			metric = calc_quality_metric
-			
-		label_base = 'simple_plot_pic_dens'
-		filename = 'simple_plot_pic_dens.dat'
-
-		# Load simulation and reference data
-		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		t_sim = contents_sim[0]
-		data_sim = contents_sim[1:]
-
-		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_ref = contents_ref[0]
-		data_ref = contents_ref[1:]
-		
-		# Ensure time steps align
-		self._validate_time_steps(t_ref, t_sim)
-		
-		# Define plot configuration
-		plot_config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Number density (#/m^3)'
-			}
-		
-		# Unpack data and add tests
-		for i in range(0, data_sim.shape[0], 3):
-			min_sim, max_sim, mean_sim = data_sim[i:i+3]
-			min_ref, max_ref, mean_ref = data_ref[i:i+3]
-			
-			label = label_base + '_species' + str(i // 3)
-			plot_config['name'] = 'plasma density, species ' + str(i // 3)
-			
-			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
-			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
-			
-			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
-			
 	def add_simple_plot_pic_temp(self, threshold, metric=None):
-		"""Add results from simple_plot_pic_temp.dat to the regression test."""
+		self._add_simple_plot(self.PIC_TEMP, threshold, metric)
 		
-		if metric is None:
-			metric = calc_quality_metric
-			
-		label_base = 'simple_plot_pic_temp'
-		filename = 'simple_plot_pic_temp.dat'
-
-		# Load simulation and reference data
-		contents_sim = np.loadtxt(os.path.join(self.sim_path, filename)).T
-		t_sim = contents_sim[0]
-		data_sim = contents_sim[1:]
-
-		contents_ref = np.loadtxt(os.path.join(self.ref_path, filename)).T
-		t_ref = contents_ref[0]
-		data_ref = contents_ref[1:]
-		
-		# Ensure time steps align
-		self._validate_time_steps(t_ref, t_sim)
-		
-		# Define plot configuration
-		plot_config = {
-			'xlabel': 'Time (s)',
-			'ylabel': 'Temperature (eV)'
-			}
-
-		# Unpack data and add tests
-		for i in range(0, data_sim.shape[0], 3):
-			min_sim, max_sim, mean_sim = data_sim[i:i+3]
-			min_ref, max_ref, mean_ref = data_ref[i:i+3]
-			
-			label = label_base + '_species' + str(i // 3)
-			plot_config['name'] = 'plasma temperature, species ' + str(i // 3)
-			
-			self.data[label + '_sim'] = (t_sim, min_sim, mean_sim, max_sim)
-			self.data[label + '_ref'] = (t_ref, min_ref, mean_ref, max_ref)
-			
-			self.tests.append((label, t_sim, mean_sim, mean_ref, metric, threshold, plot_config.copy()))
+	def add_simple_plot_pic_dens(self, threshold, metric=None):
+		self._add_simple_plot(self.PIC_DENS, threshold, metric)
 
 	def evaluate(self):
 		# Evaluate regression for each subtest
@@ -323,7 +240,7 @@ class RegressionTest(Test):
 			if metric is calc_quality_metric:
 				# Store boolean "passed" and indices "failures" of failure points
 				passed = np.all(value >= threshold)
-				failures = np.where(value < threshold)
+				failures = np.where(value < threshold)[0]
 			else:
 				print(f'Metric {metric} not supported.')
 
@@ -353,12 +270,13 @@ class RegressionTest(Test):
 			if passed:
 				print('\t\tPASSED')
 			else:
-				print('\t\t***FAILED at the following values of the independent variable:')
-				print('\t\t\tx\tref\tsim\tQ')
-				print('\t\t\t____\t____\t____\t____')
-
+				print('\n\t\t***FAILED at the following values of the independent variable:')
+				print('\t\t\tx\t\tref\t\tsim\t\tQ')
+				print('\t\t\t____\t\t____\t\t____\t\t____')
 				for i in failures:
-					print(f'\t\t\t{x[i][0]}\t{ref[i]}\t{sim[i]}\t{value[i]}')
+					print(f'\t\t\t{x[i]}\t\t{ref[i]}\t\t{sim[i]}\t\t{value[i]}')
+			
+			print()
 					
 	def output_plots(self, output_dir):
 		"""Outputs plots for all subtests."""
