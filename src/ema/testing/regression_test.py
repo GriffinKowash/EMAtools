@@ -16,12 +16,12 @@ except:
 
 
 class RegressionTestStrategy:
-	def __init__(self, filename, xlabel, ylabel, plot_name, label_suffix_func=None):
+	def __init__(self, filename, xlabel, ylabel, plot_name, label_suffix=None):
 		self._filename = filename
 		self._xlabel = xlabel
 		self._ylabel = ylabel
 		self._plot_name = plot_name
-		self._label_suffix_func = label_suffix_func or ''
+		self._label_suffix = label_suffix or ''
 
 	def get_filename(self):
 		return self._filename
