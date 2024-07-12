@@ -274,21 +274,30 @@ def find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1, mode='start'):
 def find_segment_endpoints(segment, emin):
     """Finds start/end meshes indices of an MHARNESS segment."""
 
-    # Get first and second cells in segment and find start node
-    i0 = emin.find(segment, exact=True, separator='') + 1
-    i1 = i0 + 1
-    x0, y0, z0, dir0, _ = emin.get(i0).split()
-    x1, y1, z1, dir1, _ = emin.get(i1).split()
+    # Get start/end node and handle one-cell segments
+    i_start = emin.find(segment, exact=True, separator='') + 1
+    i_end = emin.find_next(i_start, '', exact=True) - 1
 
-    start_node = find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1)
+    if i_start == i_end:
+        x0, y0, z0, dir0, _ = emin.get(i_start).split()
+        start_node = np.array([x0, y0, z0], dtype=np.int32)
+        direction = {'X': np.array([1,0,0]), 'Y': np.array([0,1,0]), 'Z': np.array([0,0,1])}
+        end_node = start_node + direction[dir0]
 
-    # Repeat to find end node
-    i0 = emin.find_next(i0, '', exact=True) - 1
-    i1 = i0 - 1
-    x0, y0, z0, dir0, _ = emin.get(i0).split()
-    x1, y1, z1, dir1, _ = emin.get(i1).split()
+    else:
+        # Get first and second cells in segment and find start node
+        i1 = i_start + 1
+        x0, y0, z0, dir0, _ = emin.get(i_start).split()
+        x1, y1, z1, dir1, _ = emin.get(i1).split()
 
-    end_node = find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1)
+        start_node = find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1)
+
+        # Repeat to find end node
+        i1 = i_end - 1
+        x0, y0, z0, dir0, _ = emin.get(i_end).split()
+        x1, y1, z1, dir1, _ = emin.get(i1).split()
+
+        end_node = find_terminating_node(x0, y0, z0, dir0, x1, y1, z1, dir1)
 
     return start_node, end_node
 
