@@ -160,3 +160,30 @@ class LinearBufferPassFunc(PassFunc):
 				return self.baseline + frac * (1 - self.baseline)
 			else:
 				return 1
+
+
+class RegressionTestHandler:
+	def __init__(self, sim_path, ref_path):
+		self.sim_path = sim_path
+		self.ref_path = ref_path
+		self.tests = []
+
+	def add_simple_plot_bem(self, metric, passfunc):
+		# Load datasets
+		sim = SimplePlotReader().load(SIM_PATH)
+		ref = SimplePlotReader().load(REF_PATH)
+
+		# Create logger and plotter
+		logger = SimpleLogger()
+		plotter = SimpleFemPlotter('FEM regression test')
+
+		# Create test
+		test = RegressionTestV2(
+			name='FEM regression test',
+			sim=sim,
+			ref=ref,
+			metric=metric,
+			passfunc=passfunc,
+			logger=logger,
+			plotter=plotter
+			)
