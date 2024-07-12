@@ -1,4 +1,6 @@
 import numpy as np
+from abc import ABC, abstractmethod
+
 
 def calc_quality_metric(data, ref, beta=1e-16, axis=None):
     """Take in sim and reference data and calculates regression metric."""
@@ -53,3 +55,32 @@ def calc_asymptotic_error(data, ref, axis=None):
         error = np.mean(error, axis=axes)
         
     return error
+
+
+
+class Metric(ABC):
+    @abstractmethod
+    def compute(self, sim, ref):
+        pass
+
+    @abstractmethod
+    def evaluate(self, error, threshold):
+        pass
+
+class TanhErrorMetric(Metric):
+    def compute(self, sim, ref):
+        sim_y = sim['y']
+        ref_y = ref['y']
+        return np.tanh((sim_y - ref_y) / ref_y)
+
+    def evaluate(self, error, threshold):
+        return abs(error) < threshold
+
+class QualityMetric(Metric):
+    def compute(self, sim, ref):
+        sim_y = sim['y']
+        ref_y = ref['y']
+        return 1 - (sim_y - ref_y)**2 / (sim_y + ref_y)**2
+
+    def evaluate(self, error, threshold):
+        return abs(error) > threshold
