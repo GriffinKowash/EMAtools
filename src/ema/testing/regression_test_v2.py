@@ -2,7 +2,6 @@ import os
 import platform
 import subprocess
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 
@@ -24,12 +23,15 @@ class RegressionTestV2:
 		self.output_dir = None
 
 	def evaluate(self):
-		x = self.sim['x']
 		error = self.metric.compute(self.sim, self.ref)
-		threshold = self.passfunc.threshold(self.ref)
+		threshold = self.passfunc.threshold(self.ref['y'])
 		passed = self.metric.evaluate(error, threshold)
-		self.results = pd.concat([x, error, threshold, passed], axis=1)
-		self.results.columns = ['x', 'error', 'threshold', 'passed']
+		self.results = {
+			'x': self.sim['x'],
+			'error': error,
+			'threshold': threshold,
+			'passed': passed
+		}
 
 	def log(self):
 		"""Format and print results for each subtest."""

@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
 import pandas as pd
+import numpy as np
 
 class PassFunc(ABC):
 	@abstractmethod
 	def threshold(self, y):
+		pass
+
+	@abstractmethod
+	def _calc(self, y):
 		pass
 
 class FlatPassFunc(PassFunc):
@@ -11,29 +16,31 @@ class FlatPassFunc(PassFunc):
 		self.baseline = baseline
 
 	def threshold(self, y):
+		return self._calc(y)
+
+	def _calc(self, y):
 		return self.baseline
 
-class LinearBufferPassFunc(PassFunc):
+class LinearRampPassFunc(PassFunc):
 	def __init__(self, baseline, cutoff):
 		self.baseline = baseline
 		self.ramp_stop = cutoff
 		self.ramp_start = cutoff * 10
 
 	def threshold(self, y):
-		# If DataFrame, extract 'y' column and apply
-		if isinstance(y, pd.DataFrame):
-			return y['y'].apply(self.threshold)
+		# If array, apply vectorized _calc method
+		if np.iterable(y):
+			return np.vectorize(self._calc, otypes='f')(y)
 
-		# If Series, apply to each entry
-		elif isinstance(y, pd.Series):
-			return y.apply(self.threshold)
-
-		# If value, calculate threshold
+		# If single value, call _calc directly
 		else:
-			if abs(y) > self.ramp_start:
-				return self.baseline
-			elif abs(y) > self.ramp_stop:
-				frac = (self.ramp_start - abs(y)) / (self.ramp_start - self.ramp_stop)
-				return self.baseline + frac * (1 - self.baseline)
-			else:
-				return 1
+			return self._calc(y)
+
+	def _calc(self, y):
+		if abs(y) > self.ramp_start:
+			return self.baseline
+		elif abs(y) > self.ramp_stop:
+			frac = (self.ramp_start - abs(y)) / (self.ramp_start - self.ramp_stop)
+			return self.baseline + frac * (1 - self.baseline)
+		else:
+			return 1

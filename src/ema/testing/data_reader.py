@@ -1,5 +1,9 @@
+import sys
+import os
 from abc import ABC, abstractmethod
-import pandas as pd
+import numpy as np
+
+from ..results import load_charge_results
 
 
 class DataReader(ABC):
@@ -10,19 +14,39 @@ class DataReader(ABC):
 class SimplePlotReader(DataReader):
 	def load(self, filepath):
 		columns = ['x', 'ymin', 'ymax', 'y']
-		data = pd.read_csv(filepath, sep=' ', header=None)
-		species = (len(data.columns) - 1) // 3
+		data = np.loadtxt(filepath).T
+		species = (data.shape[0] - 1) // 3
 
 		if species == 1:
-			data.columns = columns
-			return data
+			data_dict = {
+				'x': data[0],
+				'ymin': data[1],
+				'ymax': data[2],
+				'y': data[3]
+			}
+			return data_dict
 
 		else:
-			datasets = []
+			data_dicts = []
 			for n in range(species):
 				i = 3*n + 1
-				species_data = pd.concat([data.iloc[:, 0], data.iloc[:, i:i+3]], axis=1)
-				species_data.columns = columns
-				datasets.append(species_data)
+				data_dict = {
+					'x': data[0],
+					'ymin': data[i],
+					'ymax': data[i+1],
+					'y': data[i+2]
+				}
+				data_dicts.append(data_dict)
 
-			return datasets
+			return data_dicts
+
+class FEMReader(DataReader):
+	def load(self, filepath):
+		# Load time steps and field data
+		t, data_dict = load_charge_results(filepath)
+		return {field : {'x': t,
+						 'y': data_dict[field],
+						 'ymin': np.min(data_dict[field], axis=0),
+						 'ymean': np.mean(data_dict[field], axis=0),
+						 'ymax': np.max(data_dict[field], axis=0)
+						 } for field in data_dict}

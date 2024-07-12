@@ -71,7 +71,8 @@ class TanhErrorMetric(Metric):
     def compute(self, sim, ref):
         sim_y = sim['y']
         ref_y = ref['y']
-        return np.tanh((sim_y - ref_y) / ref_y)
+        sign = np.int32(np.sign(ref_y)) | 1
+        return np.tanh(sign * (sim_y - ref_y) / (abs(ref_y) + 1e-32))
 
     def evaluate(self, error, threshold):
         return abs(error) < threshold

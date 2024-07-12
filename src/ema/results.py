@@ -213,27 +213,25 @@ def convert_distributed_probe(path_and_name, fname=None, precision='single'):
     np.savetxt(save_path_and_name, combined, fmt=fmt)
 
 
-def load_charge_results(path_and_name, fields=False):
+def load_charge_results(path_and_name):
     """Loads FEM results file (femCHARGE_results.dat, picCHARGE_results.dat, etc.)
 
     Parameters
     ----------
     path_and_name : str
         Path to probe file (with .dat suffix)
-    fields : bool
-        If True, returns dict of field names and indices
 
     Returns
     -------
     tuple
-        A tuple of time steps and probe results, and optionally a dict of column names
+        Time steps and data dict (keys: field names, values: 2D NumPy array) 
     """
 
     # Use file class for convenience
     file = File(path_and_name)
 
     # Find all time step flags
-    indices = file.find_all('Current time')
+    timestep_indices = file.find_all('Current time')
 
     # Find number of mesh nodes
     i0 = file.find('Node ')
@@ -244,7 +242,7 @@ def load_charge_results(path_and_name, fields=False):
     t, data = [], []
     file.insert(len(file.lines), '') #helps with isolating time steps
 
-    for i in indices:
+    for i in timestep_indices:
         t.append(float(file.get(i).split()[-1]))
 
         i0 = i + 4
@@ -258,14 +256,11 @@ def load_charge_results(path_and_name, fields=False):
     data = np.swapaxes(np.array(data), 0, -1)
     t = np.array(t)
 
-    # Optionally return dict of column name/index mappings
-    if fields:
-        names = file.get(file.find('Node ')).split()
-        field_dict = {name:index for index, name in enumerate(names)}
+    # Get field names and map to data with dict
+    names = file.get(file.find('Node ')).split()
+    data_dict = {names[i] : data[i] for i in range(len(names))}
 
-        return t, data, field_dict
-
-    return t, data
+    return t, data_dict
 
 
 ### Create aliases for box probes ###

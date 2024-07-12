@@ -59,15 +59,19 @@ class SimplePlotter(Plotter):
 	def plot_simulation(self, sim, ref):
 		"""Plot simulation and reference data."""
 
+		# Unpack data
+		ref_y = ref['ymean'] if 'ymean' in ref else ref['y']
+		sim_y = sim['ymean'] if 'ymean' in sim else sim['y']
+
 		# Plot simulation and reference data
 		fig, ax = plt.subplots()
-		ax.plot(sim['x'], sim['y'], color='C0', label='Simulation')
+		ax.plot(sim['x'], sim_y, color='C0', label='Simulation')
 		
 		if 'ymin' in sim and 'ymax' in sim:
 			ax.fill_between(sim['x'], sim['ymin'], sim['ymax'], color='C0', alpha=0.4)
 
 		if ref is not None:
-			ax.plot(ref['x'], ref['y'], color='C1', label='Reference')
+			ax.plot(ref['x'], ref_y, color='C1', label='Reference')
 			if 'ymin' in ref and 'ymax' in ref:
 				ax.fill_between(ref['x'], ref['ymin'], ref['ymax'], color='C1', alpha=0.4)
 
@@ -81,12 +85,21 @@ class SimplePlotter(Plotter):
 	def plot_error(self, results):
 		"""Plot percent error against reference."""
 		
-		threshold = results['threshold']
+		# Temporary handling of 2D FEM/BEM arrays
+		if results['threshold'].ndim > 1:
+			threshold = np.mean(results['threshold'], axis=0)
+		else:
+			threshold = results['threshold']
+
+		if results['error'].ndim > 1:
+			error = np.mean(results['error'], axis=0)
+		else:
+			error = results['error']
 
 		# Plot error
 		fig, ax = plt.subplots()
-		ax.plot(results['x'], results['error'], label='Error', color='C0')
-		ax.plot(results['x'], results['threshold'], label='Pass/fail', color='C1', linestyle='--')
+		ax.plot(results['x'], error, label='Error', color='C0')
+		ax.plot(results['x'], threshold, label='Pass/fail', color='C1', linestyle='--')
 		ax.legend()
 		ax.set_xlabel(self.config.xlabel)
 		ax.set_ylabel('Error')
