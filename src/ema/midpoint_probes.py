@@ -349,16 +349,16 @@ def find_limb_midpoint(limb, emin, verbose=False):
     if i_mid >= 1:
         segment_before = limb[i_mid - 1]
         if segment_connects_at_start_node(segment, segment_before, emin):
-            index = n_mid - n_before + 1
+            index = n_mid - n_before #+ 1
             if verbose:
                 print(f'Segment {segment} connects to {segment_before} at start point--normal behavior.')
         else:
             n_after = sum(cell_counts[:i_mid + 1])
-            index = n_after - n_mid
+            index = n_after - n_mid + 1
             if verbose:
                 print(f'Segment {segment} connects to {segment_before} at end point--reverse behavior.')
     else:
-        index = n_mid - n_before + 1
+        index = n_mid - n_before #+ 1
     
     return segment, index
     
