@@ -238,9 +238,9 @@ def find_cells_in_segment(segment, emin):
 
 
 def find_array_midpoint(array):
-    """Given an array of numbers, finds the index of the entry containing the midpoint of the sum."""
+    """Given an array of numbers, finds the index of the entry containing the floored midpoint of the sum."""
     
-    midpoint = sum(array) / 2
+    midpoint = sum(array) // 2
     for i in range(len(array)):
         if sum(array[:i+1]) >= midpoint:
             return i
@@ -358,7 +358,7 @@ def find_limb_midpoint(limb, emin, verbose=False):
             if verbose:
                 print(f'Segment {segment} connects to {segment_before} at end point--reverse behavior.')
     else:
-        index = n_mid - n_before #+ 1
+        index = n_mid - n_before + 1
     
     return segment, index
     
