@@ -22,7 +22,6 @@ class RegressionTest:
 		self.logger = logger
 		self.plotter = plotter
 		self.output_dir = output_dir
-		self.plotter.config.test_name = self.name
 
 	def evaluate(self):
 		error = self.metric.compute(self.sim, self.ref)
@@ -34,13 +33,14 @@ class RegressionTest:
 			'threshold': threshold,
 			'passed': self.passed
 		}
+		return np.all(self.passed)
 
 	def log(self):
 		"""Format and print results for each subtest."""
 		self.logger.log(self)
 
 	def plot(self, output_dir=None):
-		self.plotter.plot(self.sim, self.ref, self.results)
+		self.plotter.plot(self.sim, self.ref, self.results, self.name)
 
 		if output_dir is None:
 			if self.output_dir is None:
@@ -48,7 +48,7 @@ class RegressionTest:
 			else:
 				output_dir = self.output_dir
 
-		self.plotter.save(output_dir)
+		self.plotter.save(output_dir, self.name)
 
 
 class RegressionTestHandler:
@@ -67,10 +67,17 @@ class RegressionTestHandler:
 
 		return np.all([test.passed for test in self.tests])
 
-	def add_simple_plot(self, test_name, filename, metric, passfunc, plotter, logger):
+	def plot(self):
+		for test in self.tests:
+			test.plot()
+
+	def add_simple_plot(self, plot_name, filename, metric, passfunc, plotter, logger):
 		# Load datasets
 		sim = SimplePlotReader().load(os.path.join(self.sim_path, filename))
 		ref = SimplePlotReader().load(os.path.join(self.ref_path, filename))
+
+		# Format test name
+		test_name = '{} - {}'.format(self.name, plot_name)
 
 		# If single species, create test
 		if isinstance(sim, dict):
@@ -103,31 +110,31 @@ class RegressionTestHandler:
 				self.tests.append(test)		
 
 	def add_simple_plot_bem(self, metric, passfunc):
-		test_name = '{} - {}'.format(self.name, 'BEM potential')
+		plot_name = 'BEM potential'
 		filename = 'simple_plot.dat'
-		self.add_simple_plot(test_name, filename, metric, passfunc, SimpleBemPlotter(), SimpleLogger())
+		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleBemPlotter(), SimpleLogger())
 
 	def add_simple_plot_fem(self, metric, passfunc):
-		test_name = '{} - {}'.format(self.name, 'FEM potential')
+		plot_name = 'FEM potential'
 		filename = 'simple_plot_fem.dat'
-		self.add_simple_plot(test_name, filename, metric, passfunc, SimpleFemPlotter(), SimpleLogger())
+		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleFemPlotter(), SimpleLogger())
 
 	def add_simple_plot_pic_dens(self, metric, passfunc):
-		test_name = '{} - {}'.format(self.name, 'PIC density')
+		plot_name = 'PIC density'
 		filename = 'simple_plot_pic_dens.dat'
-		self.add_simple_plot(test_name, filename, metric, passfunc, SimplePicDensPlotter(), SimpleLogger())
+		self.add_simple_plot(plot_name, filename, metric, passfunc, SimplePicDensPlotter(), SimpleLogger())
 
 	def add_simple_plot_pic_temp(self, metric, passfunc):
-		test_name = '{} - {}'.format(self.name, 'PIC temperature')
+		plot_name = 'PIC temperature'
 		filename = 'simple_plot_pic_temp.dat'
-		self.add_simple_plot(test_name, filename, metric, passfunc, SimplePicTempPlotter(), SimpleLogger())
+		self.add_simple_plot(plot_name, filename, metric, passfunc, SimplePicTempPlotter(), SimpleLogger())
 
 	def add_simple_plot_fluid_dens(self, metric, passfunc):
-		test_name = '{} - {}'.format(self.name, 'Fluid density')
+		plot_name = 'Fluid density'
 		filename = 'simple_plot_density.dat'
-		self.add_simple_plot(test_name, filename, metric, passfunc, SimpleFluidDensPlotter(), SimpleLogger())
+		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleFluidDensPlotter(), SimpleLogger())
 
 	def add_simple_plot_fluid_temp(self, metric, passfunc):
-		test_name = '{} - {}'.format(self.name, 'Fluid temperature')
+		plot_name = 'Fluid temperature'
 		filename = 'simple_plot_fluid.dat'
-		self.add_simple_plot(test_name, filename, metric, passfunc, SimpleFluidTempPlotter(), SimpleLogger())
+		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleFluidTempPlotter(), SimpleLogger())

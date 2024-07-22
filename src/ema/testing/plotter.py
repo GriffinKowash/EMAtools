@@ -5,13 +5,18 @@ import numpy as np
 
 from .metrics import calc_error
 
+try:
+	import seaborn as sns
+	sns.set()
+except:
+	pass
+
 
 class PlotConfig:
-	def __init__(self, test_name, plot_name, xlabel, ylabel):
-		self.test_name = test_name
-		self.plot_name = plot_name
+	def __init__(self, xlabel, ylabel, show_threshold=True):
 		self.xlabel = xlabel
 		self.ylabel = ylabel
+		self.show_threshold = show_threshold
 
 
 class Plotter(ABC):
@@ -32,16 +37,20 @@ class SimplePlotter(Plotter):
 	def __init__(self, plot_config):
 		self.config = plot_config
 
-	def plot(self, sim, ref=None, results=None):
+	def plot(self, sim, ref=None, results=None, name=None):
 		"""Plots simple_plot results and optionally error against reference data."""
+
+		# Set default name
+		if name is None:
+			name = 'Unnamed test'
 			
 		# Plot results
-		self.fig_sim = self.plot_simulation(sim, ref)
-		self.fig_error = self.plot_error(results)
+		self.fig_sim = self.plot_simulation(sim, ref, name)
+		self.fig_error = self.plot_error(results, name)
 			
 		return self.fig_sim, self.fig_error
 
-	def save(self, output_dir):
+	def save(self, output_dir, name):
 		"""Saves plots to output directory."""
 
 		if not os.path.isdir(output_dir):
@@ -51,16 +60,16 @@ class SimplePlotter(Plotter):
 				print(exc)
 				raise ValueError(f'Invalid output directory for plots: {output_dir}')
 
-		test_name_fmt = self.config.test_name.replace(' - ', '_').replace(' ', '_')
-		sim_filename = '_'.join([test_name_fmt, 'results.png'])
-		error_filename = '_'.join([test_name_fmt, 'error.png'])
+		name_fmt = name.replace(' - ', '_').replace(' ', '_').replace('(', '').replace(')', '')
+		sim_filename = '_'.join([name_fmt, 'results.png'])
+		error_filename = '_'.join([name_fmt, 'error.png'])
 		sim_filepath = os.path.join(output_dir, sim_filename)
 		error_filepath = os.path.join(output_dir, error_filename)
 
 		self.fig_sim.savefig(sim_filepath)
 		self.fig_error.savefig(error_filepath)
 
-	def plot_simulation(self, sim, ref):
+	def plot_simulation(self, sim, ref, name):
 		"""Plot simulation and reference data."""
 
 		# Unpack data
@@ -82,11 +91,11 @@ class SimplePlotter(Plotter):
 		ax.legend()
 		ax.set_xlabel(self.config.xlabel)
 		ax.set_ylabel(self.config.ylabel)
-		fig.suptitle(self.config.test_name)
+		fig.suptitle(name)
 
 		return fig
 
-	def plot_error(self, results):
+	def plot_error(self, results, name):
 		"""Plot percent error against reference."""
 		
 		# Temporary handling of 2D FEM/BEM arrays
@@ -103,72 +112,61 @@ class SimplePlotter(Plotter):
 		# Plot error
 		fig, ax = plt.subplots()
 		ax.plot(results['x'], error, label='Error', color='C0')
-		ax.plot(results['x'], threshold, label='Pass/fail', color='C1', linestyle='--')
+		if self.config.show_threshold:
+			ax.plot(results['x'], threshold, label='Pass/fail', color='C1', linestyle='--')
 		ax.legend()
 		ax.set_xlabel(self.config.xlabel)
 		ax.set_ylabel('Error')
-		fig.suptitle(f'{self.config.test_name} (error)')
+		fig.suptitle(f'{name} (error)')
 
 		return fig
 
 
 class SimpleBemPlotter(SimplePlotter):
-	def __init__(self, test_name=None):
-		test_name = 'Unnamed test' if test_name is None else test_name
-		plot_name = 'BEM potential'
+	def __init__(self):
 		xlabel = 'Time (s)'
 		ylabel = 'Potential (V)'
-		plot_config = PlotConfig(test_name, plot_name, xlabel, ylabel)
+		plot_config = PlotConfig(xlabel, ylabel)
 		super().__init__(plot_config)
 
 
 class SimpleFemPlotter(SimplePlotter):
-	def __init__(self, test_name=None):
-		test_name = 'Unnamed test' if test_name is None else test_name
-		plot_name = 'FEM potential'
+	def __init__(self):
 		xlabel = 'Time (s)'
 		ylabel = 'Potential (V)'
-		plot_config = PlotConfig(test_name, plot_name, xlabel, ylabel)
+		plot_config = PlotConfig(xlabel, ylabel)
 		super().__init__(plot_config)
 
 
 class SimplePicDensPlotter(SimplePlotter):
-	def __init__(self, test_name=None):
-		test_name = 'Unnamed test' if test_name is None else test_name
-		plot_name = 'PIC density'
+	def __init__(self):
 		xlabel = 'Time (s)'
 		ylabel = 'Number density (#/m^3)'
-		plot_config = PlotConfig(test_name, plot_name, xlabel, ylabel)
+		plot_config = PlotConfig(xlabel, ylabel)
 		super().__init__(plot_config)
 
 
 class SimplePicTempPlotter(SimplePlotter):
-	def __init__(self, test_name=None):
-		test_name = 'Unnamed test' if test_name is None else test_name
-		plot_name = 'PIC temperature'
+	def __init__(self):
 		xlabel = 'Time (s)'
 		ylabel = 'Temperature (eV)'
-		plot_config = PlotConfig(test_name, plot_name, xlabel, ylabel)
+		plot_config = PlotConfig(xlabel, ylabel)
 		super().__init__(plot_config)
 
 
 class SimpleFluidDensPlotter(SimplePlotter):
-	def __init__(self, test_name=None):
-		test_name = 'Unnamed test' if test_name is None else test_name
-		plot_name = 'fluid density'
+	def __init__(self):
 		xlabel = 'Time (s)'
 		ylabel = 'Density (kg/m^3)'
-		plot_config = PlotConfig(test_name, plot_name, xlabel, ylabel)
+		plot_config = PlotConfig(xlabel, ylabel)
 		super().__init__(plot_config)
 
 
 class SimpleFluidTempPlotter(SimplePlotter):
-	def __init__(self, test_name=None):
-		test_name = 'Unnamed test' if test_name is None else test_name
-		plot_name = 'fluid temperature'
+	def __init__(self):
 		xlabel = 'Time (s)'
 		ylabel = 'Temperature (K)'
-		plot_config = PlotConfig(test_name, plot_name, xlabel, ylabel)
+		plot_config = PlotConfig(xlabel, ylabel)
 		super().__init__(plot_config)
 
 
