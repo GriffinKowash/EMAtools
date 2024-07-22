@@ -13,9 +13,11 @@ except:
 
 
 class PlotConfig:
-	def __init__(self, xlabel, ylabel, show_threshold=True):
+	def __init__(self, xlabel, ylabel, sim_label=None, ref_label=None, show_threshold=True):
 		self.xlabel = xlabel
 		self.ylabel = ylabel
+		self.sim_label = ref_label or "Solver under test"
+		self.ref_label = ref_label or "Reference"
 		self.show_threshold = show_threshold
 
 
@@ -73,20 +75,21 @@ class SimplePlotter(Plotter):
 		"""Plot simulation and reference data."""
 
 		# Unpack data
+		x = sim['x']
 		ref_y = ref['ymean'] if 'ymean' in ref else ref['y']
 		sim_y = sim['ymean'] if 'ymean' in sim else sim['y']
 
 		# Plot simulation and reference data
 		fig, ax = plt.subplots()
-		ax.plot(sim['x'], sim_y, color='C0', label='Simulation')
-		
-		if 'ymin' in sim and 'ymax' in sim:
-			ax.fill_between(sim['x'], sim['ymin'], sim['ymax'], color='C0', alpha=0.4)
 
 		if ref is not None:
-			ax.plot(ref['x'], ref_y, color='C1', label='Reference')
+			ax.plot(x, ref_y, color='C0', label=self.config.ref_label)
 			if 'ymin' in ref and 'ymax' in ref:
-				ax.fill_between(ref['x'], ref['ymin'], ref['ymax'], color='C1', alpha=0.4)
+				ax.fill_between(x, ref['ymin'], ref['ymax'], color='C0', alpha=0.4)
+		
+		ax.plot(x, sim_y, color='C1', label=self.config.sim_label)
+		if 'ymin' in sim and 'ymax' in sim:
+			ax.fill_between(x, sim['ymin'], sim['ymax'], color='C1', alpha=0.4)
 
 		ax.legend()
 		ax.set_xlabel(self.config.xlabel)
@@ -120,53 +123,3 @@ class SimplePlotter(Plotter):
 		fig.suptitle(f'{name} (error)')
 
 		return fig
-
-
-class SimpleBemPlotter(SimplePlotter):
-	def __init__(self):
-		xlabel = 'Time (s)'
-		ylabel = 'Potential (V)'
-		plot_config = PlotConfig(xlabel, ylabel)
-		super().__init__(plot_config)
-
-
-class SimpleFemPlotter(SimplePlotter):
-	def __init__(self):
-		xlabel = 'Time (s)'
-		ylabel = 'Potential (V)'
-		plot_config = PlotConfig(xlabel, ylabel)
-		super().__init__(plot_config)
-
-
-class SimplePicDensPlotter(SimplePlotter):
-	def __init__(self):
-		xlabel = 'Time (s)'
-		ylabel = 'Number density (#/m^3)'
-		plot_config = PlotConfig(xlabel, ylabel)
-		super().__init__(plot_config)
-
-
-class SimplePicTempPlotter(SimplePlotter):
-	def __init__(self):
-		xlabel = 'Time (s)'
-		ylabel = 'Temperature (eV)'
-		plot_config = PlotConfig(xlabel, ylabel)
-		super().__init__(plot_config)
-
-
-class SimpleFluidDensPlotter(SimplePlotter):
-	def __init__(self):
-		xlabel = 'Time (s)'
-		ylabel = 'Density (kg/m^3)'
-		plot_config = PlotConfig(xlabel, ylabel)
-		super().__init__(plot_config)
-
-
-class SimpleFluidTempPlotter(SimplePlotter):
-	def __init__(self):
-		xlabel = 'Time (s)'
-		ylabel = 'Temperature (K)'
-		plot_config = PlotConfig(xlabel, ylabel)
-		super().__init__(plot_config)
-
-

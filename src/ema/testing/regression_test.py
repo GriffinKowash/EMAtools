@@ -79,6 +79,10 @@ class RegressionTestHandler:
 		# Format test name
 		test_name = '{} - {}'.format(self.name, plot_name)
 
+		# Add reference version to plotter configuration
+		ref_version = os.path.basename(self.ref_path)
+		plotter.config.ref_label = ref_version
+
 		# If single species, create test
 		if isinstance(sim, dict):
 			test = RegressionTest(
@@ -112,29 +116,53 @@ class RegressionTestHandler:
 	def add_simple_plot_bem(self, metric, passfunc):
 		plot_name = 'BEM potential'
 		filename = 'simple_plot.dat'
-		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleBemPlotter(), SimpleLogger())
+		xlabel = 'Time (s)'
+		ylabel = 'Potential (V)'
+		plot_config = PlotConfig(xlabel, ylabel)
+		plotter = SimplePlotter(plot_config)
+		self.add_simple_plot(plot_name, filename, metric, passfunc, plotter, SimpleLogger())
 
 	def add_simple_plot_fem(self, metric, passfunc):
 		plot_name = 'FEM potential'
 		filename = 'simple_plot_fem.dat'
-		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleFemPlotter(), SimpleLogger())
+		xlabel = 'Time (s)'
+		ylabel = 'Potential (V)'
+		plot_config = PlotConfig(xlabel, ylabel)
+		plotter = SimplePlotter(plot_config)
+		self.add_simple_plot(plot_name, filename, metric, passfunc, plotter, SimpleLogger())
 
 	def add_simple_plot_pic_dens(self, metric, passfunc):
 		plot_name = 'PIC density'
 		filename = 'simple_plot_pic_dens.dat'
-		self.add_simple_plot(plot_name, filename, metric, passfunc, SimplePicDensPlotter(), SimpleLogger())
+		xlabel = 'Time (s)'
+		ylabel = 'Number density (#/m^3)'
+		plot_config = PlotConfig(xlabel, ylabel)
+		plotter = SimplePlotter(plot_config)
+		self.add_simple_plot(plot_name, filename, metric, passfunc, plotter, SimpleLogger())
 
 	def add_simple_plot_pic_temp(self, metric, passfunc):
 		plot_name = 'PIC temperature'
 		filename = 'simple_plot_pic_temp.dat'
-		self.add_simple_plot(plot_name, filename, metric, passfunc, SimplePicTempPlotter(), SimpleLogger())
+		xlabel = 'Time (s)'
+		ylabel = 'Temperature (eV)'
+		plot_config = PlotConfig(xlabel, ylabel)
+		plotter = SimplePlotter(plot_config)
+		self.add_simple_plot(plot_name, filename, metric, passfunc, plotter, SimpleLogger())
 
 	def add_simple_plot_fluid_dens(self, metric, passfunc):
 		plot_name = 'Fluid density'
 		filename = 'simple_plot_density.dat'
-		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleFluidDensPlotter(), SimpleLogger())
+		xlabel = 'Time (s)'
+		ylabel = 'Density (kg/m^3)'
+		plot_config = PlotConfig(xlabel, ylabel)
+		plotter = SimplePlotter(plot_config)
+		self.add_simple_plot(plot_name, filename, metric, passfunc, plotter, SimpleLogger())
 
 	def add_simple_plot_fluid_temp(self, metric, passfunc):
 		plot_name = 'Fluid temperature'
 		filename = 'simple_plot_fluid.dat'
-		self.add_simple_plot(plot_name, filename, metric, passfunc, SimpleFluidTempPlotter(), SimpleLogger())
+		xlabel = 'Time (s)'
+		ylabel = 'Temperature (K)'
+		plot_config = PlotConfig(xlabel, ylabel)
+		plotter = SimplePlotter(plot_config)
+		self.add_simple_plot(plot_name, filename, metric, passfunc, plotter, SimpleLogger())
