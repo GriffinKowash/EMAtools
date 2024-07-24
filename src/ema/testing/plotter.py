@@ -16,7 +16,7 @@ class PlotConfig:
 	def __init__(self, xlabel, ylabel, sim_label=None, ref_label=None, show_threshold=True):
 		self.xlabel = xlabel
 		self.ylabel = ylabel
-		self.sim_label = ref_label or "Solver under test"
+		self.sim_label = sim_label or "Solver under test"
 		self.ref_label = ref_label or "Reference"
 		self.show_threshold = show_threshold
 
