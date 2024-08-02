@@ -363,7 +363,7 @@ def find_limb_midpoint(limb, emin, verbose=False):
     return segment, index
     
 
-def probe_conductor_currents(conductor, inp, emin, verbose=False):
+def probe_conductor_currents(conductor, inp, emin, verbose=False, timestep=None, endtime=None):
     """Places a current probe at the midpoint of each unbranching section of a conductor."""
     
     # Create a graph mapping each segment to all connected segments
@@ -383,7 +383,7 @@ def probe_conductor_currents(conductor, inp, emin, verbose=False):
         print('')
     for segment, index in midpoints:
         segment = restore_segment_topology(segment, conductor, inp)
-        inp.probe_current(segment, conductor, index)
+        inp.probe_current(segment, conductor, index, timestep=timestep, end=endtime)
         if verbose:
             print(f'Conductor {conductor}: added current probe to segment {segment} at index {index}.')
     
