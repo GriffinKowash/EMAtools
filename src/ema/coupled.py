@@ -12,6 +12,11 @@ class CoupledSim:
 		self.inp = inp
 
 
+	def set_terminations(self, res_cond=None, res_shield=None):
+		"""Sets all conductor and shield terminations to the specified values."""
+		self.inp.set_terminations(res_cond=res_cond, res_shield=res_shield)
+
+
 	def probe_midpoint_currents(self, conductors=None, verbose=False, timestep=None, endtime=None):
 		"""Place current pin probes at the midpoint of each non-branching chain of segments.
 

@@ -1,6 +1,7 @@
 import warnings
 import os
 import glob
+import types
 
 import numpy as np
 
@@ -204,3 +205,36 @@ class Inp(File):
                             entries[3] = str(resistance)
                             self.lines[j] = '        '.join(entries)
                             added.append(entries[1])
+
+
+    def set_terminations(self, res_cond=None, res_shield=None):
+        """Sets all conductor and shield terminations to the specified values."""
+
+        # Validate resistance values
+        if not isinstance(res_cond, (int, float, types.NoneType)) or not isinstance(res_shield, (int, float, types.NoneType)):
+            raise ValueError(f'Conductor and termination resistances must be of type float, int, or None; {type(res_cond)} and {type(res_shield)} provided.')
+        
+        # Modify terminations
+        termination_levels = self.find_all('!BOUNDARY CONDITION')
+
+        for i0 in termination_levels:
+            if self.get(i0 + 1) != '!!RESISTIVE':
+                print(f'Skipping termination at line {Inp.itol(i0)}; only resistive terminations are currently supported.')
+                continue
+
+            i1 = i0 + 2
+            i2 = self.find_next(i1, '', exact=True) - 1
+
+            for i, line in enumerate(self.get(i1, i2)):
+                try:
+                    seg, cond, n, res = line.split()
+                except:
+                    print(f'Failed to read line {i+1} of inp file:\t{line}')
+                    continue
+
+                if '___S' in cond:
+                    new_res = str(res_shield) if res_shield is not None else res
+                else:
+                    new_res = str(res_cond) if res_cond is not None else res
+
+                self.lines[i1+i] = '\t'.join([seg, cond, n, new_res])
