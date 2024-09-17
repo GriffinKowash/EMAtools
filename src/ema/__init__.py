@@ -1,6 +1,7 @@
 from .emc import *
 from .signal import *
 from .results import *
+from .plot import *
 
 from .file import File
 from .emin import Emin
